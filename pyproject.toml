@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "oremi-isinmi-agent"
-version = "1.0.0-beta0"
+version = "1.0.0-beta1"
 description = "A smart scheduler for alarms, timers, reminders, and calendar events, powered by local LLMs"
 keywords = ["forecast", "air quality", "pollen", "geocoding"]
 authors = ["Sébastien Demanou <demsking@gmail.com>"]
