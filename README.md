@@ -22,18 +22,14 @@ Find the Oremi Isinmi Agent deployment and API documentation at
 
 ## Features
 
-- **Weather Forecasts**: Retrieve detailed weather information, including
-  temperature, humidity, wind speed, wind direction, sunrise, and sunset times.
-- **Air Quality Data**: Access air quality metrics such as AQI, PM2.5, PM10,
-  NO₂, and O₃ levels for specific locations.
-- **Pollen Data**: Get information about pollen levels and types (e.g., grass,
-  birch, olive) to help manage allergies and plan outdoor activities.
-- **Geocoding**: Perform forward and reverse geocoding to find locations by
-  name, address, or coordinates.
-- **Generative Responses**: Use natural language queries to retrieve weather,
-  air quality, or pollen data for specific locations.
-- **Dockerized**: Easily deployable using the `demsking/oremi-isinmi-agent` Docker
-  image.
+- Alarm scheduling with custom labels and recurrence
+- Flexible timers with countdown and cancellation support
+- Persistent reminders with optional recurrence
+- Calendar event creation and management
+- Natural language understanding via Ollama (LLaMA3.2)
+- Built with a focus on performance and security
+- Easily deployable using the [`demsking/oremi-isinmi-agent`](https://hub.docker.com/r/demsking/oremi-isinmi-agent)
+  Docker image.
 
 ## Contribute
 
