@@ -1,0 +1,54 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "oremi-isinmi-agent"
+version = "1.0.0-beta0"
+description = "A smart scheduler for alarms, timers, reminders, and calendar events, powered by local LLMs"
+keywords = ["forecast", "air quality", "pollen", "geocoding"]
+authors = ["Sébastien Demanou <demsking@gmail.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://gitlab.com/demsking/oremi-isinmi-agent"
+documentation = "https://gitlab.com/demsking/oremi-isinmi-agent/-/blob/main/README.md"
+package-mode = false
+
+include = []
+exclude = []
+
+[tool.poetry.urls]
+"Say Thanks!" = "https://www.buymeacoffee.com/demsking"
+"Source" = "https://gitlab.com/demsking/oremi-isinmi-agent"
+"Tracker" = "https://gitlab.com/demsking/oremi-isinmi-agent/-/issues"
+
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+fastapi = "^0.115.12"
+hishel = "^0.1.1"
+oremi-core = "^2.5.3"
+ollama = "^0.4.7"
+pytz = "^2025.2"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
+apscheduler = "^3.11.0"
+isodate = "^0.7.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+pytest-cov = "^6.1.1"
+trio = "^0.29.0"
+pytest-asyncio = "^0.23.7"
+pylint = "^3.2.4"
+python-slugify = "^8.0.4"
+python-dotenv = "^1.1.0"
+
+[tool.skjold]
+sources = ["pyup", "gemnasium", "osv", "pypa"]
+report_only = false # Exit with non-zero exit code on findings.
+
+[tool.pytest.ini_options]
+# Function starting with the following pattern are considered for test cases.
+python_functions = "test_"

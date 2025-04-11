@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "server:api",
+        "--reload",
+        "--host", "0.0.0.0",
+        "--port", "7337"
+      ],
+      "jinja": true,
+      "justMyCode": false,
+      "envFile": "${workspaceFolder}/.devcontainer/.env",
+      "env": {
+        "LOG_LEVEL": "debug"
+      }
+    }
+  ]
+}

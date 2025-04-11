@@ -1,0 +1,6 @@
+ignore:
+  CVE-2023-25399:
+  - expires: 2100-01-01T00:00:00+0000
+    package: scipy
+    reason: No fix avaible for Python 3.8
+version: 1.0

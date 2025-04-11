@@ -1,0 +1,22 @@
+---
+name: oremi-isinmi-agent-dev
+
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ..:/workspaces:cached
+    command: sleep infinity
+
+  ollama:
+    tty: true
+    image: ollama/ollama
+    restart: always
+    runtime: nvidia
+    volumes:
+      - ~/.ollama:/root/.ollama
+    environment:
+      CUDA_VISIBLE_DEVICES: 0
+...
