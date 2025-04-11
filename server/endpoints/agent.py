@@ -21,7 +21,7 @@ from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi import Path
 from fastapi import Query
-from fastapi import Response
+from fastapi.responses import JSONResponse
 
 from ..core.controller import Controller
 from ..core.models import AlarmPayload
@@ -121,29 +121,32 @@ def create_agent_endpoints(
       model.webhook_url = request.webhook_url
       model.webhook_payload = request.webhook_payload
       record = await controller.schedule(model)
+      response = Controller.Response(
+        ok=True,
+        id=record.id,
+        type=record.type,
+        input=request.text,
+        message=message,
+        data=model,
+      )
 
-      return Response(
+      return JSONResponse(
         status_code=201,
-        content=Controller.Response(
-          ok=True,
-          id=record.id,
-          type=record.type,
-          input=request.text,
-          message=message,
-          data=model,
-        ),
+        content=response.model_dump(),
       )
     except Controller.MissingParameterError as error:
-      return Response(
+      response = Controller.Response(
+        ok=False,
+        id=None,
+        type=None,
+        input=request.text,
+        message=error.message,
+        data=None,
+      )
+
+      return JSONResponse(
         status_code=412,
-        content=Controller.Response(
-          ok=False,
-          id=None,
-          type=None,
-          input=request.text,
-          message=error.message,
-          data=None,
-        ),
+        content=response.model_dump(),
       )
     except Controller.UnknowServiceError as error:
       raise HTTPException(status_code=400, detail=str(error)) from error
