@@ -21,10 +21,14 @@ import dateutil.parser
 import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import HTTPException
+from ollama import Options
+from ollama import ResponseError
 from pydantic import BaseModel
 from pydantic import Field
 
 from .assistant import Assistant
+from .engine import Engine
+from .engine import SupportedLanguage
 from .models import AlarmPayload
 from .models import NaturalLanguageRequest
 from .models import ReminderPayload
@@ -36,14 +40,14 @@ from .models import WebhookResponse
 
 
 class Controller:
-  def __init__(
-    self,
-    assistant: Assistant,
-    logger: logging.Logger,
-  ):
+  def __init__(self, assistant: Assistant, logger: logging.Logger) -> None:
     self.logger = logger
     self.scheduler = AsyncIOScheduler()
     self.active_schedules: dict[str, ScheduleRequest] = {}
+
+    self.engine_en = Engine('en', logger)
+    self.engine_fr = Engine('fr', logger)
+
     self.agent = assistant.create_agent(
       system=(
         'You are a scheduling assistant.\n'
@@ -77,6 +81,15 @@ class Controller:
         'Do not add explanations, formatting, or extra text around the JSON.\n'
       )
     )
+
+  def get_engine(self, language: SupportedLanguage) -> Engine:
+    if language == 'en':
+      return self.engine_en
+
+    if language == 'fr':
+      return self.engine_fr
+
+    return self.engine_en
 
   async def call_webhook(self, webhook_url: str, payload: dict) -> WebhookResponse:
     """Call the external webhook with the given payload"""
@@ -120,25 +133,41 @@ class Controller:
     if not schedule.is_recurring:
       self.active_schedules.pop(schedule_id, None)
 
-  async def process_natural_language(self, request: NaturalLanguageRequest) -> tuple[str, ScheduleRequest]:
-    """Convert natural language to structured schedule request"""
+  async def process_natural_language(self, request: NaturalLanguageRequest, language: str) -> tuple[str, ScheduleRequest]:
+    engine = self.engine_en if language == 'en' else self.engine_fr
+    query = str(request)
+    score, retrieved = engine.predict(query)
+
+    self.logger.debug(f'Retrieved example with score {score:.4f}: {retrieved}')
+
     try:
-      result = await self.agent.generate(prompt=str(request), options={'temperature': 0.2})
+      result = await self.agent.generate(
+        options=Options(temperature=0.2),
+        prompt=(
+          'Here is an example:\n'
+          f'User Request: "{retrieved["input"]}"\n'
+          f'JSON Response: {json.dumps(retrieved["output"], indent=2, ensure_ascii=False)}'
+          '\n\n'
+          'Now for:\n'
+          f'{query}\n\n'
+          # 'Answer only with a JSON object strictly identical to the above format by just using the user language based on the user request.'
+        ),
+      )
 
       self.logger.debug(f'Generated response for "{request.text}": {result.response!s}')
 
       model = json.loads(result.response)
 
       if 'type' not in model:
-        raise Controller.UnknowServiceError('Unable to identify the appropriate service from the request')
+        raise Engine.UnknowServiceError('Unable to identify the appropriate service from the request')
 
       if model['type'] != 'error' and 'label' not in model:
-        raise Controller.UnknowServiceError('Unable to generate a label from the request')
+        raise Engine.UnknowServiceError('Unable to generate a label from the request')
 
       match model['type']:
         case 'alarm':
           if 'time' not in model:
-            raise Controller.UnknowServiceError('Unable to extract a time from the request')
+            raise Engine.UnknowServiceError('Unable to extract a time from the request')
 
           payload = AlarmPayload(
             label=model['label'],
@@ -151,7 +180,7 @@ class Controller:
 
         case 'timer':
           if 'duration' not in model:
-            raise Controller.UnknowServiceError('Unable to extract a duration from the request')
+            raise Engine.UnknowServiceError('Unable to extract a duration from the request')
 
           payload = TimerPayload(
             label=model['label'],
@@ -164,7 +193,7 @@ class Controller:
 
         case 'reminder':
           if 'time' not in model:
-            raise Controller.UnknowServiceError('Unable to extract a time from the request')
+            raise Engine.UnknowServiceError('Unable to extract a time from the request')
 
           payload = ReminderPayload(
             label=model['label'],
@@ -176,12 +205,15 @@ class Controller:
           )
 
         case 'error':
-          raise Controller.MissingParameterError(model['message'])
+          raise Engine.MissingParameterError(model['message'])
 
         case _:
-          raise Controller.UnknowServiceError(f'Invalid model type: {model["type"]!s}')
+          raise Engine.UnknowServiceError(f'Invalid model type: {model["type"]!s}')
 
       return model['creation_message'], payload
+    except ResponseError as error:
+      self.logger.error(f'Ollama API error: {error!s}')
+      raise HTTPException(status_code=500, detail=f'An unexpected error occurred: {error!s}') from error
     except json.JSONDecodeError as exception:
       self.logger.error(f'Failed to parse natural language: {exception!s}')
       raise HTTPException(status_code=400, detail=f'Could not understand request: {exception!s}') from exception
@@ -216,10 +248,11 @@ class Controller:
 
     return ScheduleRecord(
       id=schedule_id,
-      type=schedule.type,
+      type=schedule.type,  # type: ignore
       label=schedule.label,
       scheduled_time=schedule_time,
       webhook_url=schedule.webhook_url,
+      status='scheduled',
     )
 
   class Response(BaseModel):

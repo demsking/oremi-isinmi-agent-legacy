@@ -16,7 +16,7 @@ import sys
 import tomllib
 
 with open('pyproject.toml', 'rb') as file:
-  value = tomllib.load(file)['tool']['poetry'][sys.argv[1]]
+  value = tomllib.load(file)['project'][sys.argv[1]]
 
 if isinstance(value, list):
   value = ', '.join(value)

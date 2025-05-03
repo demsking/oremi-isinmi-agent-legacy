@@ -2,11 +2,15 @@
   "name": "Oremi Isinmi Agent",
   "dockerComposeFile": "workspace.yaml",
   "service": "devcontainer",
-  "runServices": ["ollama"],
+  "runServices": [
+    "ollama"
+  ],
   "workspaceFolder": "/workspaces",
   "shutdownAction": "stopCompose",
-  "postCreateCommand": "poetry install",
-  "forwardPorts": [7337],
+  "postCreateCommand": "make install",
+  "forwardPorts": [
+    7337
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -15,30 +19,7 @@
         "ms-python.python",
         "ms-python.vscode-pylance",
         "GitHub.copilot"
-      ],
-      "settings": {
-        "files.exclude": {
-          "**/.devbox": true,
-          "**/.venv": true
-        },
-        "python.defaultInterpreterPath": "$POETRY_HOME/venv/bin/python",
-        "python.pythonPath": "$POETRY_HOME/venv/bin/python",
-        "python.terminal.activateEnvInCurrentTerminal": true,
-        "pylint.importStrategy": "fromEnvironment",
-        "editor.formatOnPaste": false,
-        "editor.formatOnSave": true,
-        "editor.formatOnType": true,
-        "files.trimTrailingWhitespace": true,
-        "terminal.integrated.profiles.linux": {
-          "sh": {
-            "path": "/bin/sh"
-          }
-        },
-        "terminal.integrated.defaultProfile.linux": "sh",
-        "[python]": {
-          "editor.defaultFormatter": "charliermarsh.ruff"
-        }
-      }
+      ]
     }
   }
 }

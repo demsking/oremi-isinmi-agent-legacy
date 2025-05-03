@@ -14,29 +14,16 @@
 # ==============================================================================
 import asyncio
 import json
-import logging
 import os
 
-import uvicorn.config
+import uvicorn
 
-from server.core.api import BASE_PATH
-from server.core.assistant import Assistant
-from server.core.config import CACHE_DIR
+from server import api
 from server.core.config import HOST
-from server.core.config import LOG_FILE
-from server.core.config import OLLAMA_BASEURL
-from server.core.config import OLLAMA_MODEL
 from server.core.config import PORT
-from server.core.config import ROOT_PATH
-from server.core.config import USER_AGENT
-from server.core.config import WORKERS
-from server.core.logger import LOG_LEVEL_STR
-from server.core.logger import logger
-from server.core.package import APP_NAME
-from server.core.package import APP_VERSION
 
 
-def get_log_config():
+def get_log_config() -> dict:
   current_dir = os.path.dirname(os.path.abspath(__file__))
   config_filename = os.path.join(current_dir, 'log-config.json')
 
@@ -44,60 +31,20 @@ def get_log_config():
     return json.load(file)
 
 
-async def main():
-  """
-  The main entry point for starting the server.
-  This function initializes the logging configuration, logs server and application
-  details, loads the assistant model, and starts the Uvicorn server.
-
-  Key Steps:
-  - Configures logging based on verbosity.
-  - Logs server configuration details such as host, port, workers, and paths.
-  - Initializes and loads the assistant model.
-  - Starts the Uvicorn server with the specified configuration.
-
-  Note:
-  The assistant model is loaded in the `main` function instead of the `__init__.py` file
-  because the server uses multiple workers. Loading the model in `main` ensures that the
-  model is loaded only once per worker, avoiding redundant initialization and resource usage.
-  """
-  verbose = logger.isEnabledFor(logging.DEBUG)
-  log_config = get_log_config() if not verbose else uvicorn.config.LOGGING_CONFIG
-
-  logger.info(f'Starting {APP_NAME}/{APP_VERSION}')
-  logger.info(f'Server Host: {HOST}')
-  logger.info(f'Server Port: {PORT}')
-  logger.info(f'Server Workers: {WORKERS}')
-  logger.info(f'Server Root Path: {ROOT_PATH}')
-  logger.info(f'API Root Path: {ROOT_PATH}')
-  logger.info(f'API Base Path: {BASE_PATH}')
-  logger.info(f'User Agent: {USER_AGENT}')
-  logger.info(f'Cache Directory: {CACHE_DIR}')
-  logger.info(f'Ollama URL: {OLLAMA_BASEURL}')
-  logger.info(f'Ollama Model: {OLLAMA_MODEL}')
-  logger.info(f'Log Level: {LOG_LEVEL_STR}')
-  logger.info(f'Log File Path: {LOG_FILE or None}')
-
-  assistant = Assistant(
-    model=OLLAMA_MODEL,
-    logger=logger,
-    ollama_baseurl=OLLAMA_BASEURL,
-  )
-
-  await assistant.load_model()
-  del assistant
-
-  uvicorn.run(
-    app='server:api',
+async def main() -> None:
+  config = uvicorn.Config(
+    app=api,
     host=HOST,
     port=PORT,
-    workers=WORKERS,
     server_header=False,
     use_colors=True,
     proxy_headers=True,
     log_level='info',
-    log_config=log_config,
+    log_config=get_log_config(),
   )
+
+  server = uvicorn.Server(config)
+  await server.serve()
 
 
 if __name__ == '__main__':

@@ -1,23 +1,56 @@
 {
-  "editor.tabSize": 2,
-  "editor.insertSpaces": true,
-  "editor.detectIndentation": false,
-  "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true,
+  "pylint.importStrategy": "fromEnvironment",
+  "editor.formatOnPaste": false,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
   "files.trimTrailingWhitespace": true,
   "files.exclude": {
-    ".venv": true,
+    "**/.devbox": true,
     "**/.directory": true,
     "**/.coverage": true,
     "**/.direnv": true,
     "**/.nix-node": true,
     "**/.ruff_cache": true,
+    "**/.venv": true,
     "**/.pytest_cache": true,
     "**/*.egg-info": true,
     "**/__pycache__": true,
     "**/dist": true
   },
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingTypeStubs": "information",
+    "reportPrivateImportUsage": "none"
+  },
+  "python.analysis.exclude": [
+    ".venv/**"
+  ],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.importFormat": "relative",
+  "python.analysis.inlayHints.functionReturnTypes": true,
+  "python.analysis.inlayHints.pytestParameters": true,
+  "python.analysis.inlayHints.variableTypes": true,
+  "python.analysis.fixAll": [
+    "source.convertImportFormat"
+  ],
   "python.testing.pytestEnabled": true,
-  "python.testing.pytestArgs": ["tests"],
-  "python.testing.unittestEnabled": false
+  "python.testing.unittestEnabled": false,
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "/bin/bash"
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.envFile": "${workspaceFolder}/.devcontainer/.env",
+  "python.terminal.shellIntegration.enabled": false,
+  "python.testing.pytestArgs": [
+    "tests"
+  ]
 }

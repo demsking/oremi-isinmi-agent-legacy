@@ -14,10 +14,7 @@
       ],
       "jinja": true,
       "justMyCode": false,
-      "envFile": "${workspaceFolder}/.devcontainer/.env",
-      "env": {
-        "LOG_LEVEL": "debug"
-      }
+      "envFile": "${workspaceFolder}/.devcontainer/.env"
     }
   ]
 }

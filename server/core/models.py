@@ -27,6 +27,10 @@ from pydantic import field_validator
 from .time import get_current_datetime
 
 
+class GenericResponse(BaseModel):
+  ok: bool
+
+
 class NaturalLanguageRequest(BaseModel):
   text: str = Field(
     ...,

@@ -1,54 +1,67 @@
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+##
+## https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
 
-[tool.poetry]
+[project]
 name = "oremi-isinmi-agent"
 version = "1.0.0-beta2"
 description = "A smart scheduler for alarms, timers, reminders, and calendar events, powered by local LLMs"
 keywords = ["forecast", "air quality", "pollen", "geocoding"]
-authors = ["Sébastien Demanou <demsking@gmail.com>"]
-license = "Apache-2.0"
+authors = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
+maintainers = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
+license = { text = "Apache-2.0" }
 readme = "README.md"
-repository = "https://gitlab.com/demsking/oremi-isinmi-agent"
-documentation = "https://gitlab.com/demsking/oremi-isinmi-agent/-/blob/main/README.md"
-package-mode = false
+requires-python = ">=3.11,<3.12"
 
-include = []
-exclude = []
+classifiers = [
+  # How mature is this project? Common values are
+  #   3 - Alpha
+  #   4 - Beta
+  #   5 - Production/Stable
+  "Development Status :: 4 - Beta",
 
-[tool.poetry.urls]
+  # Indicate who your project is intended for
+  "Intended Audience :: Developers",
+
+  # Specify the Python versions you support here.
+  "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+  "apscheduler>=3.11.0",
+  "faiss-cpu>=1.11.0",
+  "fastapi>=0.115.12",
+  "hishel>=0.1.2",
+  "isodate>=0.7.2",
+  "langid>=1.1.6",
+  "ollama>=0.4.8",
+  "oremi-core>=2.5.3",
+  "pytz>=2025.2",
+  "sentence-transformers>=4.1.0",
+  "symspellpy>=6.9.0",
+  "uvicorn[standard]>=0.34.2",
+]
+
+[project.urls]
 "Say Thanks!" = "https://www.buymeacoffee.com/demsking"
+"Documentation" = "https://demsking.gitlab.io/oremi-isinmi-agent"
 "Source" = "https://gitlab.com/demsking/oremi-isinmi-agent"
-"Tracker" = "https://gitlab.com/demsking/oremi-isinmi-agent/-/issues"
+"Issues" = "https://gitlab.com/demsking/oremi-isinmi-agent/-/issues"
 
-[tool.poetry.requires-plugins]
-poetry-plugin-export = ">=1.8"
-
-[tool.poetry.dependencies]
-python = ">=3.11,<3.12"
-fastapi = "^0.115.12"
-hishel = "^0.1.1"
-oremi-core = "^2.5.3"
-ollama = "^0.4.7"
-pytz = "^2025.2"
-uvicorn = {extras = ["standard"], version = "^0.34.0"}
-apscheduler = "^3.11.0"
-isodate = "^0.7.2"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.2.0"
-pytest-cov = "^6.1.1"
-trio = "^0.29.0"
-pytest-asyncio = "^0.23.7"
-pylint = "^3.2.4"
-python-slugify = "^8.0.4"
-python-dotenv = "^1.1.0"
+[dependency-groups]
+dev = [
+  "babel>=2.17.0",
+  "faker>=37.1.0",
+  "pytest>=8.3.5",
+  "pytest-asyncio>=0.26.0",
+  "pytest-cov>=6.1.1",
+  "python-dotenv>=1.1.0",
+  "python-slugify>=8.0.4",
+  "trio>=0.30.0",
+]
 
 [tool.skjold]
 sources = ["pyup", "gemnasium", "osv", "pypa"]
-report_only = false # Exit with non-zero exit code on findings.
+report_only = false
 
 [tool.pytest.ini_options]
-# Function starting with the following pattern are considered for test cases.
 python_functions = "test_"

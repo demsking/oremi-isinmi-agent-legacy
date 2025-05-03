@@ -18,7 +18,6 @@ import httpx
 from ollama import AsyncClient
 from ollama import GenerateResponse
 from ollama import Options
-from ollama import ResponseError
 
 
 class Assistant:
@@ -77,17 +76,30 @@ class Agent:
     self,
     prompt: str,
     options: Options | None = None,
-  ) -> GenerateResponse | None:
+  ) -> GenerateResponse:
+    """
+    Asynchronously generates a response based on the provided prompt and options.
+
+    Args:
+      prompt (str): The input prompt to generate a response for.
+      options (Options | None, optional): Additional options to customize the generation process. Defaults to None.
+
+    Returns:
+      GenerateResponse: The generated response.
+
+    Raises:
+      ResponseError: If an error occurs during the generation process.
+
+    Logs:
+      - Debug: Logs the prompt being used for generation.
+      - Error: Logs any errors encountered during the generation process.
+    """
     self.logger.debug(f'Generating with prompt:\n{prompt}')
 
-    try:
-      return await self.client.generate(
-        model=self.model,
-        prompt=prompt,
-        system=self.system or '',
-        stream=False,
-        options=options,
-      )
-    except ResponseError as error:
-      self.logger.error(f'Ollama Error: {error.error}')
-      return None
+    return await self.client.generate(
+      model=self.model,
+      prompt=prompt,
+      system=self.system or '',
+      stream=False,
+      options=options,
+    )

@@ -7,9 +7,6 @@ repos:
       - id: trailing-whitespace
         name: 'Remove Trailing Whitespace'
         description: 'Automatically remove trailing whitespace in files.'
-      - id: check-added-large-files
-        name: 'Check for Large Added Files'
-        description: 'Prevent the addition of large files to the repository.'
       - id: check-ast
         name: 'Check Python AST Validity'
         description: 'Ensure all Python files parse correctly with the AST module.'
@@ -40,6 +37,11 @@ repos:
       - id: name-tests-test
         name: 'Ensure Test Files Start with "test"'
         description: 'Ensure test files are named correctly, starting with "test".'
+
+  # - repo: https://github.com/astral-sh/uv-pre-commit
+  #   rev: 0.6.14
+  #   hooks:
+  #     - id: uv-lock
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
@@ -82,6 +84,12 @@ repos:
         name: 'Auto-format Python Code with autopep8'
         description: 'Automatically format Python code to comply with PEP 8 using `autopep8`.'
         entry: autopep8
+        language: system
+        files: '\.py$'
+      - id: generate-openapi-json
+        name: 'Generate OpenAPI JSON Documentation'
+        description: 'Generate OpenAPI JSON file for API documentation.'
+        entry: make doc/openapi.json
         language: system
         files: '\.py$'
       - id: pylint

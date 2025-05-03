@@ -1,7 +1,38 @@
-FROM python:3.11-alpine3.21
+#
+## Stage 1: Builder
+FROM python:3.11-slim AS builder
 
-ENV PATH="/opt/oremi-isinmi-agent/bin:/usr/local/bin:$PATH"
-ENV PYTHONPATH="/opt/oremi-isinmi-agent:/usr/local/lib/python3.11/site-packages"
+ENV UV_LINK_MODE=copy
+
+# Set the shell to /bin/bash and enable pipefail
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Change the working directory
+WORKDIR /app
+
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --no-dev --locked --no-install-project --compile-bytecode
+
+# Sync the project
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-dev --locked
+
+#
+## Stage 2: Final
+FROM python:3.11-slim
+
+# Set the shell to /bin/bash and enable pipefail
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+ENV PATH="/opt/oremi-isinmi-agent/bin:$PATH"
+ENV PYTHONPATH="/opt/oremi-isinmi-agent:/opt/oremi-isinmi-agent/.venv/lib/python3.11/site-packages"
 ENV PYTHONUNBUFFERED="1"
 ENV PYTHONDONTWRITEBYTECODE="1"
 
@@ -18,19 +49,8 @@ ENV OLLAMA_BASEURL=
 ENV LOG_LEVEL="info"
 ENV LOG_FILE=
 
-# Set the shell to /bin/ash and enable pipefail
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
-
-# Install dependencies
-RUN apk update \
-  && apk add --no-cache tzdata
-
-# Upgrade pip and setuptools to the latest version
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# Build Python dependencies
-COPY build/requirements.txt /opt/oremi-isinmi-agent/
-RUN pip install --no-cache-dir -r /opt/oremi-isinmi-agent/requirements.txt
+# Copy the environment, but not the source code
+COPY --from=builder --chown=oremi:oremi /app/.venv /opt/oremi-isinmi-agent/.venv
 
 # Binaries
 COPY bin/* /opt/oremi-isinmi-agent/bin/
@@ -38,9 +58,16 @@ RUN chmod +x /opt/oremi-isinmi-agent/bin/* \
   && mkdir -p /var/cache/oremi-isinmi-agent
 
 # Copy application files
-COPY pyproject.toml LICENSE DOCUMENTATION.md /opt/oremi-isinmi-agent/
+COPY pyproject.toml uv.lock LICENSE DOCUMENTATION.md /opt/oremi-isinmi-agent/
+COPY models/ /opt/oremi-isinmi-agent/models
 COPY server/ /opt/oremi-isinmi-agent/server
 
+# Volumes
+VOLUME "/var/cache/oremi-isinmi-agent"
+VOLUME "/root/.cache/huggingface"
+
+# Expose the port
 EXPOSE 7337
 
+# Execute the application
 CMD ["oremi-isinmi-agent"]

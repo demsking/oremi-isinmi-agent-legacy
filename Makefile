@@ -33,11 +33,8 @@ down:
 stats:
 	docker compose -f .devcontainer/workspace.yaml stats
 
-install:
-	poetry install
-
 gen-tests:
-	python scripts/gen.py
+	python scripts/generate-tests.py
 
 test: gen-tests
 	pytest -vv
@@ -54,31 +51,75 @@ lint:
 fix:
 	ruff check . --fix
 
-# Show outdated dependencies using poetry
+#
+## Dependencies
+install:
+	uv sync
+
 outdated:
-	poetry show --outdated
+	# poetry show --outdated
 
 update:
-	poetry update
+	uv sync --upgrade
 	devbox update
 	pre-commit autoupdate
 
+
+#
+## Dictionaries
+
+# Dictionaries can be found at:
+# https://github.com/wolfgarbe/SymSpell/tree/master/SymSpell.FrequencyDictionary
+LANGUAGES := en fr
+MODELS_DIR := models/symspell
+DICTIONARY_URLS := https://raw.githubusercontent.com/wolfgarbe/SymSpell/refs/heads/master/SymSpell.FrequencyDictionary
+
+# Define the file names for downloaded dictionaries with language codes
+DICTIONARY_FILES := en-80k.txt fr-100k.txt
+DICTIONARY_MODELS := $(addprefix $(MODELS_DIR)/, $(DICTIONARY_FILES))
+
+# Default target: download all dictionaries
+symspell-models: $(DICTIONARY_MODELS)
+
+# Rule to download each dictionary and rename it with the language code
+$(DICTIONARY_MODELS):
+	mkdir -p $(MODELS_DIR)
+	echo "Downloading and renaming dictionary for $@..." && \
+	curl -o $@ $(DICTIONARY_URLS)/$(notdir $@)
+
+# Clean target to remove downloaded dictionaries
+clean-dictionaries:
+	@echo "Cleaning up..."
+	@rm -f $(MODELS_DIR)
+
+
+#
+## Index
+models/isinmi/en-index.faiss:
+	python scripts/build-index.py --language en
+
+models/isinmi/fr-index.faiss:
+	python scripts/build-index.py --language fr
+
+index: models/isinmi/fr-index.faiss models/isinmi/en-index.faiss
+
+clean-index:
+	rm -rf models/isinmi/
+
+resources: symspell-models index
+clean: clean-dictionaries clean-index
+
+
+#
+## Documentation
+.PHONY: doc/openapi.json
+doc/openapi.json:
+	python scripts/generate-openapi.py > $@
+
 #
 ## Packaging
-build/context:
-	docker buildx create --name $(APP_NAME) --bootstrap
-	mkdir -p build/
-	touch $@
-
-build/requirements.txt: pyproject.toml poetry.lock
-	mkdir -p build/
-	poetry export --only=main --without-hashes -f requirements.txt -o $@
-
-image: build/context build/requirements.txt
-	docker buildx use $(APP_NAME)
-	docker buildx build . \
-	  --platform linux/amd64,linux/arm64 \
-	  --push \
+image: resources
+	docker build . \
 	  --progress plain \
 	  --tag $(IMAGE_NAME):$(APP_VERSION) \
 	  --tag $(IMAGE_NAME):latest \
@@ -86,21 +127,20 @@ image: build/context build/requirements.txt
 	  --label "org.opencontainers.image.description=$(shell python scripts/metadata.py description)" \
 	  --label "org.opencontainers.image.version=$(APP_VERSION)" \
 	  --label "org.opencontainers.image.revision=$(shell git rev-parse HEAD)" \
-	  --label "org.opencontainers.image.authors=$(shell python scripts/metadata.py authors)" \
+	  --label "org.opencontainers.image.authors=Sébastien Demanou <demsking@gmail.com>" \
 	  --label "org.opencontainers.image.created=$(shell date --rfc-3339=seconds)" \
-	  --label "org.opencontainers.image.source=$(shell python scripts/metadata.py repository)" \
-	  --label "org.opencontainers.image.url=$(shell python scripts/metadata.py repository)" \
-	  --label "org.opencontainers.image.documentation=$(shell python scripts/metadata.py documentation)" \
 	  --label "org.opencontainers.image.vendor=Sébastien Demanou" \
 	  --label "org.opencontainers.image.licenses=$(shell python scripts/metadata.py license)"
 
-image-test: build/requirements.txt
-	docker build --debug . \
+image-test: resources
+	docker build . \
 	  --progress plain \
 	  --tag $(IMAGE_NAME):test
+	docker run -it --rm -p 17337:7337 $(IMAGE_NAME):test
 
-publish: image-test
-	git commit pyproject.toml -m "Release $(APP_VERSION)"
-	$(MAKE) image
+publish: image
+	git commit pyproject.toml uv.lock -m "Release $(APP_VERSION)"
+	docker push $(IMAGE_NAME):$(APP_VERSION)
+	docker push $(IMAGE_NAME):latest
 	git tag v$(APP_VERSION)
 	git push --tags origin main

@@ -49,6 +49,54 @@
         }
       }
     },
+    "git-lfs@latest": {
+      "last_modified": "2025-03-23T05:31:05Z",
+      "resolved": "github:NixOS/nixpkgs/dd613136ee91f67e5dba3f3f41ac99ae89c5406b#git-lfs",
+      "source": "devbox-search",
+      "version": "3.6.1",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kp8v6xwbpgjqszsr490axvbj0h3fyzr1-git-lfs-3.6.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kp8v6xwbpgjqszsr490axvbj0h3fyzr1-git-lfs-3.6.1"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/g1sr0palcw94jd93dq72ch6crg0m7mpf-git-lfs-3.6.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/g1sr0palcw94jd93dq72ch6crg0m7mpf-git-lfs-3.6.1"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/krvabi8dgxrrii2hsm21prycvadp7ckr-git-lfs-3.6.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/krvabi8dgxrrii2hsm21prycvadp7ckr-git-lfs-3.6.1"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/fxkw93ljlxz5zy9jsn65wyjmlgchxiar-git-lfs-3.6.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/fxkw93ljlxz5zy9jsn65wyjmlgchxiar-git-lfs-3.6.1"
+        }
+      }
+    },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
       "resolved": "github:NixOS/nixpkgs/b0b4b5f8f621bfe213b8b21694bab52ecfcbf30b?lastModified=1744032190&narHash=sha256-KSlfrncSkcu1YE%2BuuJ%2FPTURsSlThoGkRqiGDVdbiE%2Fk%3D"
     },
@@ -244,71 +292,6 @@
         }
       }
     },
-    "poetry@latest": {
-      "last_modified": "2025-03-22T01:19:59Z",
-      "plugin_version": "0.0.4",
-      "resolved": "github:NixOS/nixpkgs/0740f6f238767d4caf9afe774d3e88105766dfc6#poetry",
-      "source": "devbox-search",
-      "version": "2.1.1",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/fh1c32rqps8fihjkmv368ym3psf1pdw0-python3.12-poetry-2.1.1",
-              "default": true
-            },
-            {
-              "name": "dist",
-              "path": "/nix/store/3bqzgs564nwq81xfffz81dycxsw563hq-python3.12-poetry-2.1.1-dist"
-            }
-          ],
-          "store_path": "/nix/store/fh1c32rqps8fihjkmv368ym3psf1pdw0-python3.12-poetry-2.1.1"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/pzyp21ympffxlp87djq40s4m0zf2m2p4-python3.12-poetry-2.1.1",
-              "default": true
-            },
-            {
-              "name": "dist",
-              "path": "/nix/store/ak59zi20fij3nbwyxw5vbdc3kqq55vkr-python3.12-poetry-2.1.1-dist"
-            }
-          ],
-          "store_path": "/nix/store/pzyp21ympffxlp87djq40s4m0zf2m2p4-python3.12-poetry-2.1.1"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/h5gyii01nnrp7z6zaijdyhhsixpa1x87-python3.12-poetry-2.1.1",
-              "default": true
-            },
-            {
-              "name": "dist",
-              "path": "/nix/store/km8al95rwj6dbas4db0z3vxanskdp2la-python3.12-poetry-2.1.1-dist"
-            }
-          ],
-          "store_path": "/nix/store/h5gyii01nnrp7z6zaijdyhhsixpa1x87-python3.12-poetry-2.1.1"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/637d5yc5z3wn5pamfpdihri5q7j85wv5-python3.12-poetry-2.1.1",
-              "default": true
-            },
-            {
-              "name": "dist",
-              "path": "/nix/store/dypj58qjw79v0823j44p7pyxf8vf2cmg-python3.12-poetry-2.1.1-dist"
-            }
-          ],
-          "store_path": "/nix/store/637d5yc5z3wn5pamfpdihri5q7j85wv5-python3.12-poetry-2.1.1"
-        }
-      }
-    },
     "pre-commit@latest": {
       "last_modified": "2025-03-23T14:04:58Z",
       "resolved": "github:NixOS/nixpkgs/f3a2a0601e9669a6e38af25b46ce6c4563bcb6da#pre-commit",
@@ -498,6 +481,70 @@
             }
           ],
           "store_path": "/nix/store/w05c4vaplhxz9xgrnvawq08qjs6wdh1g-python3.11-bandit-1.7.10"
+        }
+      }
+    },
+    "python311Packages.pylint@latest": {
+      "last_modified": "2024-12-03T12:40:06Z",
+      "resolved": "github:NixOS/nixpkgs/566e53c2ad750c84f6d31f9ccb9d00f823165550#python311Packages.pylint",
+      "source": "devbox-search",
+      "version": "3.3.1",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/f2i4406wkxlw83mzhac2rd5wj8dqavrw-python3.11-pylint-3.3.1",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/a65id1343zb9xjr5a3y9sqclhr5n7xhv-python3.11-pylint-3.3.1-dist"
+            }
+          ],
+          "store_path": "/nix/store/f2i4406wkxlw83mzhac2rd5wj8dqavrw-python3.11-pylint-3.3.1"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/r0524n3q8adwzwpklqlhnscyjngpxxm3-python3.11-pylint-3.3.1",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/igq6sy5bh2zwhbalwc4z2wykvfrsis39-python3.11-pylint-3.3.1-dist"
+            }
+          ],
+          "store_path": "/nix/store/r0524n3q8adwzwpklqlhnscyjngpxxm3-python3.11-pylint-3.3.1"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/a4hgbl3gp9h6h7877zi31b8ilryz49l4-python3.11-pylint-3.3.1",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/i13mj2amsphc5vdffpqba24pa4c51vrz-python3.11-pylint-3.3.1-dist"
+            }
+          ],
+          "store_path": "/nix/store/a4hgbl3gp9h6h7877zi31b8ilryz49l4-python3.11-pylint-3.3.1"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/gfagkrjf95a4g6py36niffl4s80l4y4h-python3.11-pylint-3.3.1",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/90mddw3l2hl5qrgv0x8vr1qb1pbwvx8x-python3.11-pylint-3.3.1-dist"
+            }
+          ],
+          "store_path": "/nix/store/gfagkrjf95a4g6py36niffl4s80l4y4h-python3.11-pylint-3.3.1"
         }
       }
     },
@@ -1143,6 +1190,54 @@
             }
           ],
           "store_path": "/nix/store/iqrxib6jhf1k513hncgk2crqk6yxhszz-tmuxinator-3.3.3"
+        }
+      }
+    },
+    "uv@latest": {
+      "last_modified": "2025-04-10T20:20:34Z",
+      "resolved": "github:NixOS/nixpkgs/d19cf9dfc633816a437204555afeb9e722386b76#uv",
+      "source": "devbox-search",
+      "version": "0.6.14",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/9f492dxkf4qkvkr0n950xphmqjh29pwk-uv-0.6.14",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/9f492dxkf4qkvkr0n950xphmqjh29pwk-uv-0.6.14"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ana816flfaf6sh76h9xswphq9lyb0iv6-uv-0.6.14",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/ana816flfaf6sh76h9xswphq9lyb0iv6-uv-0.6.14"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/z6mxd485vrkyxdw57zlldmsqahpqfsi6-uv-0.6.14",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/z6mxd485vrkyxdw57zlldmsqahpqfsi6-uv-0.6.14"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/z4ld2kivcl6hmj4k8i5x7wbfmmsfyvm2-uv-0.6.14",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/z4ld2kivcl6hmj4k8i5x7wbfmmsfyvm2-uv-0.6.14"
         }
       }
     }

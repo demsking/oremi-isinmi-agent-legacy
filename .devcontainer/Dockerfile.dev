@@ -1,29 +1,34 @@
-FROM python:3.11-alpine3.21
+FROM python:3.11-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set environment variables
-ENV TZ=UTC
 ENV PATH="/home/devuser/.local/bin:$PATH"
-ENV POETRY_HOME="/home/devuser/.local"
-ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 
-# Set the shell to /bin/ash and enable pipefail
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+# Set the shell to /bin/bash and enable pipefail
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 # Install dependencies
-RUN apk update \
-  && apk add --no-cache curl git make vim tzdata
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    git \
+    git-lfs \
+    curl \
+    make \
+    vim \
+  && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry for the root user (temporarily)
-RUN curl -sSL https://install.python-poetry.org | python -
+# Upgrade pip and setuptools to the latest version
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Create a non-root user without a password
-RUN adduser -D -h /home/devuser -s /bin/sh devuser \
+RUN useradd --create-home --shell /bin/bash devuser \
   && chown -R devuser:devuser /home/devuser
 
 # Switch to the devuser
 USER devuser
 WORKDIR /workspaces
 ENV POETRY_VIRTUALENVS_IN_PROJECT=false
-ENV EDITOR=vim
+ENV PYTHONPATH=".:$PYTHONPATH"
+COPY bashrc /home/devuser/.bashrc
 
-CMD ["sh"]
+CMD ["bash"]

@@ -24,12 +24,15 @@ from fastapi import Query
 from fastapi.responses import JSONResponse
 
 from ..core.controller import Controller
+from ..core.engine import SupportedLanguage
 from ..core.models import AlarmPayload
+from ..core.models import GenericResponse
 from ..core.models import NaturalLanguageRequest
 from ..core.models import ScheduleRecord
 from ..core.models import ScheduleRequest
 from ..core.models import ScheduleType
 from ..core.models import TimerPayload
+from ..core.spellchecker import SpellChecker
 
 
 def create_agent_endpoints(
@@ -38,9 +41,36 @@ def create_agent_endpoints(
   controller: Controller,
 ) -> None:
   @api.post(
+    '/load',
+    tags=[tag],
+    responses={
+      200: {},
+    },
+  )
+  async def load_model(
+    language: SupportedLanguage = Query(
+      ...,  # Required parameter
+      description='The language for which the model should be loaded.',
+      examples=['fr', 'en'],
+    ),
+  ) -> GenericResponse:
+    """
+    Loads the model for a specific language.
+
+    This endpoint is used to load the necessary model for a given language.
+    If the model is not available, an error message is returned.
+    """
+    engine = controller.get_engine(language)
+
+    await engine.load()
+
+    return GenericResponse(ok=True)
+
+  @api.post(
     '/schedules/natural',
     tags=[tag],
     status_code=201,
+    response_model=Controller.Response,
     responses={
       201: {
         'content': {
@@ -59,7 +89,7 @@ def create_agent_endpoints(
                   'timezone': 'Europe/Paris',
                   'is_recurring': False,
                   'type': 'reminder',
-                  'time': '2025-04-12T10:00:00+00:00',
+                  'time': datetime.now() + timedelta(hours=1, minutes=25),
                 },
               }
             ),
@@ -106,7 +136,12 @@ def create_agent_endpoints(
         )
       ],
     ),
-  ) -> Controller.Response:
+    language: SupportedLanguage | None = Query(
+      None,
+      description='',
+      examples=['en', 'fr'],
+    ),
+  ):
     """
     Creates a schedule based on natural language input. The input text is
     processed to extract scheduling details, which are then used to create
@@ -116,8 +151,14 @@ def create_agent_endpoints(
     This endpoint is useful for users who prefer to describe their schedule
     in plain language instead of providing structured data.
     """
+    lang = language or SpellChecker.detect_language(request.text)[0]
+    engine = controller.get_engine(lang)  # type: ignore
+
+    if engine:
+      await engine.load()
+
     try:
-      message, model = await controller.process_natural_language(request)
+      message, model = await controller.process_natural_language(request, language=lang)
       model.webhook_url = request.webhook_url
       model.webhook_payload = request.webhook_payload
       record = await controller.schedule(model)
@@ -259,15 +300,15 @@ def create_agent_endpoints(
     schedules = [
       ScheduleRecord(
         id=schedule_id,
-        type=schedule.type,
-        scheduled_time=schedule.time,
+        type=schedule.type,  # type: ignore
+        scheduled_time=schedule.time,  # type: ignore
         label=schedule.label,
         webhook_url=schedule.webhook_url,
         status='scheduled',
       )
       for schedule_id, schedule in controller.active_schedules.items()
       if (not type_filter or schedule.type == type_filter)
-      and (not active_only or schedule.time > datetime.now(tz=schedule.time.tzinfo))
+      and (not active_only or schedule.time > datetime.now(tz=schedule.time.tzinfo))  # type: ignore
     ]
     return sorted(schedules, key=lambda x: x.scheduled_time)
 

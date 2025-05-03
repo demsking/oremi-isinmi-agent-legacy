@@ -23,10 +23,18 @@ from pydantic import ValidationError
 
 from .core.api import BASE_PATH
 from .core.assistant import Assistant
+from .core.config import CACHE_DIR
+from .core.config import HOST
+from .core.config import LOG_FILE
 from .core.config import OLLAMA_BASEURL
 from .core.config import OLLAMA_MODEL
+from .core.config import PORT
+from .core.config import ROOT_PATH
+from .core.config import USER_AGENT
 from .core.controller import Controller
-from .core.logger import logger
+from .core.logger import create_logger
+from .core.logger import LOG_LEVEL_STR
+from .core.package import APP_NAME
 from .core.package import APP_VERSION
 from .endpoints.agent import create_agent_endpoints
 from .endpoints.docs import create_docs_endpoints
@@ -43,7 +51,7 @@ _readme_path = os.path.realpath(
 with open(_readme_path, encoding='utf-8') as file:
   SERVICE_DESCRIPTION = file.read()
 
-agents_tag = {
+agent_tag = {
   'name': 'Agents Endpoints',
   'description': (
     'Endpoints for managing schedules and triggering events. These endpoints '
@@ -65,13 +73,21 @@ version_tag = {
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-  # Startup
-  controller.scheduler.start()
-  logger.info('Scheduler started')
+  logger.info(f'Starting {APP_NAME}/{APP_VERSION}')
+  logger.info(f'Server Host: {HOST}')
+  logger.info(f'Server Port: {PORT}')
+  logger.info(f'Server Root Path: {ROOT_PATH}')
+  logger.info(f'API Root Path: {ROOT_PATH}')
+  logger.info(f'API Base Path: {BASE_PATH}')
+  logger.info(f'User Agent: {USER_AGENT}')
+  logger.info(f'Cache Directory: {CACHE_DIR}')
+  logger.info(f'Ollama URL: {OLLAMA_BASEURL}')
+  logger.info(f'Ollama Model: {OLLAMA_MODEL}')
+  logger.info(f'Log Level: {LOG_LEVEL_STR}')
+  logger.info(f'Log File Path: {LOG_FILE or None}')
+
+  await assistant.load_model()
   yield
-  # Shutdown
-  controller.scheduler.shutdown()
-  logger.info('Scheduler stopped')
 
 
 api = FastAPI(
@@ -90,10 +106,12 @@ api = FastAPI(
     'url': 'http://www.apache.org/licenses/LICENSE-2.0.html',
   },
   openapi_tags=[
-    agents_tag,
+    agent_tag,
     version_tag,
   ],
 )
+
+logger = create_logger()
 
 assistant = Assistant(
   model=OLLAMA_MODEL,
@@ -102,11 +120,11 @@ assistant = Assistant(
 )
 
 controller = Controller(
-  logger=logger,
   assistant=assistant,
+  logger=logger,
 )
 
-create_agent_endpoints(tag=agents_tag['name'], api=api, controller=controller)
+create_agent_endpoints(tag=agent_tag['name'], api=api, controller=controller)
 create_version_endpoints(version_tag['name'], api)
 create_docs_endpoints(api)
 
@@ -124,7 +142,7 @@ async def handle_pydantic_validation_error(
       'detail': validation_error['msg'],
       'loc': validation_error['loc'],
       'input': str(validation_error['input']),
-      'url': validation_error['url'],
+      'url': validation_error['url'],  # type: ignore
     },
   )
 
