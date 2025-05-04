@@ -30,9 +30,9 @@ SupportedLanguage = Literal['fr', 'en']
 
 
 class Engine:
-  MODEL_PATH = PROJECT_DIRECTORY / 'models'
-  SYMSPELL_MODELS_PATH = MODEL_PATH / 'symspell'
-  PODCAST_MODELS = MODEL_PATH / 'isinmi'
+  MODELS_PATH = PROJECT_DIRECTORY / 'models'
+  SYMSPELL_MODELS_PATH = MODELS_PATH / 'symspell'
+  ENGINE_MODELS_PATH = MODELS_PATH / 'isinmi'
 
   model: SentenceTransformer
   index: Any
@@ -53,19 +53,13 @@ class Engine:
     self.loading = False
     self.logger = logger
     self.language: SupportedLanguage = language
-    self.index_file = Engine.PODCAST_MODELS / f'{language}-index.faiss'
-    self.data_file = Engine.PODCAST_MODELS / f'{language}-data.jsonl'
+    self.index_file = Engine.ENGINE_MODELS_PATH / f'{language}-index.faiss'
+    self.data_file = Engine.ENGINE_MODELS_PATH / f'{language}-data.jsonl'
     self.spellchecker = SpellChecker(
       lang=language,
       dictionary_path=Engine.dictionaries[language],
       logger=logger,
     )
-
-  def get_model(self) -> SentenceTransformer:
-    model_name = Engine.models[self.language]
-
-    self.logger.info(f'Loading model {model_name}...')
-    return SentenceTransformer(model_name)
 
   async def load(self) -> None:
     if not self.ready.is_set() and not self.loading:
@@ -79,7 +73,10 @@ class Engine:
       await self.ready.wait()
 
   def load_model(self) -> None:
-    self.model = self.get_model()
+    model_name = Engine.models[self.language]
+
+    self.logger.info(f'Loading model {model_name}...')
+    self.model = SentenceTransformer(model_name)
 
   def load_index(self) -> None:
     # Load FAISS index
@@ -115,7 +112,7 @@ class Engine:
     q = self.spellchecker.fix_sentence(query)
     score, retrieved = self.find_similar(q)
 
-    self.logger.debug(f'Retrieved example with score {score:.4f}: {retrieved}')
+    self.logger.debug(f'Retrieved example with score {score:.4f} for input "{q}": {retrieved}')
 
     return score, retrieved
 

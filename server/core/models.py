@@ -66,18 +66,12 @@ class NaturalLanguageRequest(BaseModel):
     examples=['Europe/Paris', 'Africa/Douala', 'Africa/Lagos', 'America/New_York', 'Asia/Tokyo'],
   )
 
-  context: str | None = Field(
-    default=None,
-    description='Additional context information for the schedule.',
-    examples=['Meeting with John at 10 AM tomorrow', 'Reminder for a meeting'],
-  )
-
   @property
   def current_datetime(self) -> str:
     return get_current_datetime(self.timezone).strftime('%A, %B %d, %Y %I:%M:%S %p')
 
   def __str__(self) -> str:
-    return f'User Request: {self.text}.\nCurrent Date Time: {self.current_datetime}.\n{self.context or ""}'
+    return f'User Request: {self.text}.\nCurrent Date Time: {self.current_datetime}.'
 
 
 class ScheduleType(str, Enum):
@@ -139,6 +133,15 @@ class TimerPayload(BaseScheduleRequest):
         raise ValueError('Duration must be in ISO 8601 format (e.g., PT1H30M)') from error
 
     return value
+
+  @field_serializer('duration', when_used='unless-none')
+  def serialize_duration(self, duration: timedelta):
+    return (
+      'PT'
+      + (f'{duration.total_seconds() // 3600:.0f}H' if duration.total_seconds() >= 3600 else '')
+      + (f'{(duration.total_seconds() % 3600) // 60:.0f}M' if duration.total_seconds() >= 60 else '')
+      + (f'{int(duration.total_seconds() % 60)}S' if duration.total_seconds() % 60 else '')
+    )
 
 
 class ReminderPayload(BaseScheduleRequest):

@@ -50,46 +50,14 @@ class Controller:
 
     self.agent = assistant.create_agent(
       system=(
-        'You are a scheduling assistant.\n'
-        '\n'
-        "Convert the user's scheduling request into a strict JSON object using only\n"
-        'the following fields:\n'
-        '\n'
-        '- "type": must be one of "alarm", "timer", or "reminder"\n'
-        '- "time": ISO 8601 datetime (e.g. "2025-04-10T14:00:00Z") — required for\n'
-        '  alarms and reminders\n'
-        '- "label": a short label or title for the action\n'
-        '- "creation_message": a short message confirming the action was created\n'
-        '- "duration": ISO 8601 duration (e.g. "PT25M") — required only for timers\n'
-        '- "is_recurring": boolean\n'
-        '\n'
-        'If any required field is missing — for example:\n'
-        '- a missing "time" for alarms or reminders\n'
-        '- a missing "duration" for timers\n'
-        '- no time or duration mentioned in the request at all\n'
-        '\n'
-        'Then return a valid JSON object with:\n'
-        '- "type": set to "error"\n'
-        '- "message": a friendly, simple explanation in the user\'s language\n'
-        '\n'
-        'The error message must:\n'
-        '- be short, clear, and conversational\n'
-        '- sound like a helpful assistant\n'
-        '- never include technical terms or codes\n'
-        '\n'
+        'You are a scheduling assistant.\n\n'
         'Always return exactly one well-formed JSON object.\n'
         'Do not add explanations, formatting, or extra text around the JSON.\n'
       )
     )
 
   def get_engine(self, language: SupportedLanguage) -> Engine:
-    if language == 'en':
-      return self.engine_en
-
-    if language == 'fr':
-      return self.engine_fr
-
-    return self.engine_en
+    return self.engine_fr if language == 'fr' else self.engine_en
 
   async def call_webhook(self, webhook_url: str, payload: dict) -> WebhookResponse:
     """Call the external webhook with the given payload"""
@@ -135,10 +103,7 @@ class Controller:
 
   async def process_natural_language(self, request: NaturalLanguageRequest, language: str) -> tuple[str, ScheduleRequest]:
     engine = self.engine_en if language == 'en' else self.engine_fr
-    query = str(request)
-    score, retrieved = engine.predict(query)
-
-    self.logger.debug(f'Retrieved example with score {score:.4f}: {retrieved}')
+    _score, retrieved = engine.predict(request.text)
 
     try:
       result = await self.agent.generate(
@@ -149,7 +114,7 @@ class Controller:
           f'JSON Response: {json.dumps(retrieved["output"], indent=2, ensure_ascii=False)}'
           '\n\n'
           'Now for:\n'
-          f'{query}\n\n'
+          f'{request}\n\n'
           # 'Answer only with a JSON object strictly identical to the above format by just using the user language based on the user request.'
         ),
       )

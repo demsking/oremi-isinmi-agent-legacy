@@ -5,7 +5,7 @@
 # Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
-image: python:3.11-alpine
+image: python:3.11-slim
 
 stages:
   # - build
@@ -14,6 +14,17 @@ stages:
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+
+# docker-build:
+#   stage: build
+#   image: docker:latest
+#   services:
+#     - docker:dind
+#   script:
+#     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#     - make docker-build
+#   only:
+#     - main
 
 sast:
   stage: test
@@ -24,21 +35,6 @@ include:
 pages:
   stage: deploy
   script:
-    # Setting
-    - export PATH="/root/.local/bin:$PATH"
-    - export PYTHONPATH=.:/usr/local/lib/python3.11/site-packages:$PYTHONPATH
-    - export POETRY_HOME=/usr/local
-    - export POETRY_VIRTUALENVS_CREATE=false
-
-    # Setting system dependencies
-    - apk add --no-cache curl
-
-    # Installing project dependencies
-    - curl -sSL https://install.python-poetry.org | python3 -
-    - poetry install
-
-    # Generating openapi.json file
-    - python scripts/generate-openapi.py
     - cp -r doc/ public/
     - ls -lah public/
     - echo "The documentation site will be deployed to $CI_PAGES_URL"

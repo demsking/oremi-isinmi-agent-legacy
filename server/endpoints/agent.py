@@ -131,7 +131,6 @@ def create_agent_endpoints(
             'webhook_url': 'https://example.com/webhook',
             'webhook_payload': {'key': 'value'},
             'timezone': 'Europe/Paris',
-            'context': 'Meeting with John at 10 AM tomorrow',
           }
         )
       ],
@@ -141,7 +140,7 @@ def create_agent_endpoints(
       description='',
       examples=['en', 'fr'],
     ),
-  ):
+  ) -> Controller.Response:
     """
     Creates a schedule based on natural language input. The input text is
     processed to extract scheduling details, which are then used to create
@@ -174,7 +173,7 @@ def create_agent_endpoints(
       return JSONResponse(
         status_code=201,
         content=response.model_dump(),
-      )
+      )  # type: ignore
     except Controller.MissingParameterError as error:
       response = Controller.Response(
         ok=False,
@@ -188,7 +187,7 @@ def create_agent_endpoints(
       return JSONResponse(
         status_code=412,
         content=response.model_dump(),
-      )
+      )  # type: ignore
     except Controller.UnknowServiceError as error:
       raise HTTPException(status_code=400, detail=str(error)) from error
 
