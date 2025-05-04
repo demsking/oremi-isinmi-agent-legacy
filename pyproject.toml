@@ -3,7 +3,7 @@
 
 [project]
 name = "oremi-isinmi-agent"
-version = "1.0.0-beta3"
+version = "1.0.0-beta4"
 description = "A smart scheduler for alarms, timers, reminders, and calendar events, powered by local LLMs"
 keywords = ["forecast", "air quality", "pollen", "geocoding"]
 authors = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
