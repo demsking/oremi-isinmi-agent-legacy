@@ -119,6 +119,8 @@ doc/openapi.json:
 #
 ## Packaging
 image: resources
+	@echo "Building $(IMAGE_NAME):$(APP_VERSION)"
+	uv lock
 	docker build . \
 	  --progress plain \
 	  --tag $(IMAGE_NAME):$(APP_VERSION) \
