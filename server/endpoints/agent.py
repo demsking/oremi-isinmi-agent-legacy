@@ -41,24 +41,26 @@ def create_agent_endpoints(
   controller: Controller,
 ) -> None:
   @api.post(
-    '/load',
+    '/model',
     tags=[tag],
     responses={
       200: {},
     },
   )
-  async def load_model(
+  async def preload_model(
     language: SupportedLanguage = Query(
-      ...,  # Required parameter
+      ...,
       description='The language for which the model should be loaded.',
       examples=['fr', 'en'],
     ),
   ) -> GenericResponse:
     """
-    Loads the model for a specific language.
+    Preload model for a specific language.
 
-    This endpoint is used to load the necessary model for a given language.
-    If the model is not available, an error message is returned.
+    This endpoint initializes and loads the language model corresponding to
+    the specified language. It prepares the engine for handling future
+    requests in the selected language. If the model is already loaded,
+    the operation is idempotent.
     """
     engine = controller.get_engine(language)
 
@@ -142,13 +144,16 @@ def create_agent_endpoints(
     ),
   ) -> Controller.Response:
     """
-    Creates a schedule based on natural language input. The input text is
-    processed to extract scheduling details, which are then used to create
-    a schedule. A webhook URL is required to notify when the schedule
-    triggers. Optionally, a payload can be sent with the webhook.
+    Create a schedule from natural language input.
 
-    This endpoint is useful for users who prefer to describe their schedule
-    in plain language instead of providing structured data.
+    This endpoint allows users to describe their scheduling needs in plain
+    language (e.g., "Set a reminder for a meeting at 10 AM tomorrow"). The
+    system will parse the input, extract structured scheduling data, and
+    create the corresponding reminder or event.
+
+    Requires a webhook URL to notify when the schedule is triggered. A payload
+    can be attached to the webhook. Supports optional language specification
+    for improved parsing accuracy.
     """
     lang = language or SpellChecker.detect_language(request.text)[0]
     engine = controller.get_engine(lang)  # type: ignore
@@ -238,13 +243,12 @@ def create_agent_endpoints(
     ),
   ) -> ScheduleRecord:
     """
-    Creates a new schedule using structured data. The schedule can be a
-    one-time event or a recurring event. For timers, the trigger time is
-    calculated based on the provided duration. The schedule is stored and
-    added to the scheduler for execution.
+    Create a schedule from structured data.
 
-    This endpoint is ideal for users who have precise scheduling details
-    and want to create a schedule programmatically.
+    This endpoint creates a schedule such as an alarm or timer using precise,
+    structured input. It supports recurring and one-time schedules. The
+    schedule is validated, stored, and registered for future execution
+    with the associated webhook callback.
     """
     return await controller.schedule(schedule)
 
@@ -290,11 +294,11 @@ def create_agent_endpoints(
     ),
   ) -> list[ScheduleRecord]:
     """
-    Retrieves a list of all active schedules. Users can filter the results
-    by schedule type or choose to only include schedules that are still
-    active. The schedules are sorted by their scheduled time.
+    List scheduled items.
 
-    This endpoint helps users view and manage their existing schedules.
+    This endpoint returns scheduled events, optionally filtered by type and
+    by whether they are still active. Results are sorted chronologically.
+    It's useful for monitoring, updating, or canceling existing schedules.
     """
     schedules = [
       ScheduleRecord(
@@ -342,12 +346,11 @@ def create_agent_endpoints(
     ),
   ):
     """
-    Cancels a specific schedule by its unique ID. If the schedule is found,
-    it is removed from the scheduler and the active schedules list. If the
-    schedule does not exist, a 404 error is returned.
+    Cancel a scheduled event.
 
-    This endpoint is useful for users who want to stop a schedule from
-    triggering in the future.
+    This endpoint removes a scheduled event from the system using its ID.
+    If the schedule is found, it's deleted; otherwise, a 404 error is returned.
+    Ideal for stopping events before execution.
     """
     if schedule_id not in controller.active_schedules:
       raise HTTPException(status_code=404, detail='Schedule not found')
@@ -392,11 +395,10 @@ def create_agent_endpoints(
     ),
   ):
     """
-    Immediately triggers a specific schedule by its unique ID. The schedule
-    is executed in the background, allowing users to test or manually
-    trigger schedules without waiting for their scheduled time.
+    Trigger a scheduled event immediately.
 
-    This endpoint is helpful for debugging or testing purposes.
+    This endpoint allows manual execution of a scheduled event before its scheduled time.
+    Useful for testing or urgent executions. Executes in the background.
     """
     if schedule_id not in controller.active_schedules:
       raise HTTPException(status_code=404, detail='Schedule not found')
