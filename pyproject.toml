@@ -29,7 +29,7 @@ classifiers = [
 dependencies = [
   "apscheduler>=3.11.0",
   "faiss-cpu>=1.11.0",
-  "fastapi>=0.115.12",
+  "fastapi[standard]>=0.115.12",
   "hf-xet>=1.1.0",
   "hishel>=0.1.2",
   "isodate>=0.7.2",
@@ -38,8 +38,7 @@ dependencies = [
   "oremi-core>=2.5.3",
   "pytz>=2025.2",
   "sentence-transformers>=4.1.0",
-  "symspellpy>=6.9.0",
-  "uvicorn[standard]>=0.34.2",
+  "symspellpy>=6.9.0"
 ]
 
 [project.urls]
@@ -50,13 +49,16 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "babel>=2.17.0",
-  "faker>=37.1.0",
+  "autopep8>=2.3.2",
+  "bandit>=1.8.3",
+  "pylint>=3.3.7",
+  "pyroma>=4.2",
   "pytest>=8.3.5",
   "pytest-asyncio>=0.26.0",
   "pytest-cov>=6.1.1",
   "python-dotenv>=1.1.0",
   "python-slugify>=8.0.4",
+  "reorder-python-imports>=3.14.0",
   "trio>=0.30.0",
 ]
 

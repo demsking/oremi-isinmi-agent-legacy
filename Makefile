@@ -54,10 +54,12 @@ fix:
 #
 ## Dependencies
 install:
+	rm -rf .venv
+	uv venv
 	uv sync
 
 outdated:
-	# poetry show --outdated
+	uv pip list --outdated
 
 update:
 	uv sync --upgrade
@@ -135,10 +137,10 @@ image: resources
 	  --label "org.opencontainers.image.licenses=$(shell python scripts/metadata.py license)"
 
 image-test: resources
+	uv lock
 	docker build . \
 	  --progress plain \
 	  --tag $(IMAGE_NAME):test
-	docker run -it --rm -p 17337:7337 $(IMAGE_NAME):test
 
 publish: image
 	git commit pyproject.toml uv.lock -m "Release $(APP_VERSION)"

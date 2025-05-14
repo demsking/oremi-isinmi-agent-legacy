@@ -2,7 +2,8 @@ FROM python:3.11-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set environment variables
-ENV PATH="/home/devuser/.local/bin:$PATH"
+ENV PATH="/home/devuser/.local/bin:/workspaces/.venv/bin:$PATH"
+ENV UV_LINK_MODE="copy"
 
 # Set the shell to /bin/bash and enable pipefail
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
@@ -27,7 +28,6 @@ RUN useradd --create-home --shell /bin/bash devuser \
 # Switch to the devuser
 USER devuser
 WORKDIR /workspaces
-ENV POETRY_VIRTUALENVS_IN_PROJECT=false
 ENV PYTHONPATH=".:$PYTHONPATH"
 COPY bashrc /home/devuser/.bashrc
 
