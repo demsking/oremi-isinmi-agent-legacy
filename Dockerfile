@@ -31,6 +31,18 @@ FROM python:3.11-slim
 # Set the shell to /bin/bash and enable pipefail
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
+# Copy the environment, but not the source code
+COPY --from=builder --chown=oremi:oremi /app/.venv /opt/oremi-isinmi-agent/.venv
+
+# Binaries
+COPY bin/* /opt/oremi-isinmi-agent/bin/
+RUN chmod +x /opt/oremi-isinmi-agent/bin/*
+
+# Copy application files
+COPY models/ /opt/oremi-isinmi-agent/models
+COPY server/ /opt/oremi-isinmi-agent/server
+COPY pyproject.toml LICENSE DOCUMENTATION.md /opt/oremi-isinmi-agent/
+
 ENV PATH="/opt/oremi-isinmi-agent/bin:$PATH"
 ENV PYTHONPATH="/opt/oremi-isinmi-agent:/opt/oremi-isinmi-agent/.venv/lib/python3.11/site-packages"
 ENV PYTHONUNBUFFERED="1"
@@ -40,25 +52,6 @@ ENV TZ=UTC
 
 ENV HOST="0.0.0.0"
 ENV PORT=7337
-
-ENV OLLAMA_MODEL="llama3.2"
-ENV OLLAMA_BASEURL=
-
-ENV LOG_LEVEL="info"
-ENV LOG_FILE=
-
-# Copy the environment, but not the source code
-COPY --from=builder --chown=oremi:oremi /app/.venv /opt/oremi-isinmi-agent/.venv
-
-# Binaries
-COPY bin/* /opt/oremi-isinmi-agent/bin/
-RUN chmod +x /opt/oremi-isinmi-agent/bin/* \
-  && mkdir -p /var/cache/oremi-isinmi-agent
-
-# Copy application files
-COPY pyproject.toml uv.lock LICENSE DOCUMENTATION.md /opt/oremi-isinmi-agent/
-COPY models/ /opt/oremi-isinmi-agent/models
-COPY server/ /opt/oremi-isinmi-agent/server
 
 # Volumes
 VOLUME "/var/cache/oremi-isinmi-agent"
