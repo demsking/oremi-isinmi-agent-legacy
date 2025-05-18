@@ -175,28 +175,27 @@ class Controller:
       now = get_current_datetime(TIMEZONE)
       due = await self.get_due_schedules(now)
 
-      for item in due:
+      for schedule in due:
         for tags, queue in self._subscribers:
-          self.logger.debug(f'Filtering {item} against tags {tags}')
+          self.logger.debug(f'Filtering {schedule} against tags {tags}')
 
-          if any(tag in tags for tag in item.tags):
-            record = Controller.schedule_to_record(item)
+          if any(tag in tags for tag in schedule.tags):
+            record = Controller.schedule_to_record(schedule)
 
             await queue.put(record)
 
-        if item.is_recurring and item.scheduled_time:  # type: ignore
+        if schedule.is_recurring and schedule.scheduled_time:  # type: ignore
           # For recurring alarms/reminders, add 1 day and update
-          next_time = item.scheduled_time + timedelta(days=1)
+          next_time = schedule.scheduled_time + timedelta(days=1)
+          schedule.scheduled_time = next_time  # type: ignore
 
           async with self._session_factory() as session:
-            db_item = await session.get(Schedule, item.id)
-
-            if db_item:
-              db_item.scheduled_time = next_time  # type: ignore
-              await session.commit()
+            session.add(schedule)
+            await session.refresh(schedule)
+            await session.commit()
         else:
-          self.logger.debug(f'Deleting {item} from schedule')
-          await self.delete_schedule(item.id)  # type: ignore
+          self.logger.debug(f'Deleting {schedule} from schedule')
+          await self.delete_schedule(schedule.id)  # type: ignore
 
       await asyncio.sleep(1)
 
