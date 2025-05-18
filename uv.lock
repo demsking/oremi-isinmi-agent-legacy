@@ -776,7 +776,7 @@ wheels = [
 
 [[package]]
 name = "oremi-isinmi-agent"
-version = "1.0.0b6"
+version = "1.0.0b7"
 source = { virtual = "." }
 dependencies = [
     { name = "aiosqlite" },
