@@ -12,43 +12,60 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import asyncio
 import json
 import logging
 import uuid
 from datetime import datetime
+from datetime import timedelta
 
 import dateutil.parser
-import httpx
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import HTTPException
+from fastapi import status
 from ollama import Options
 from ollama import ResponseError
 from pydantic import BaseModel
 from pydantic import Field
+from sqlalchemy import select
 
 from .assistant import Assistant
+from .config import TIMEZONE
+from .database import async_session
 from .engine import Engine
 from .engine import SupportedLanguage
 from .models import AlarmPayload
 from .models import NaturalLanguageRequest
 from .models import ReminderPayload
+from .models import SchedulePayload
 from .models import ScheduleRecord
-from .models import ScheduleRequest
 from .models import ScheduleType
 from .models import TimerPayload
-from .models import WebhookResponse
+from .schema import Schedule
+from .time import get_current_datetime
+
+
+FilterTags = list[str]
+ScheduleQueue = asyncio.Queue[ScheduleRecord]
 
 
 class Controller:
-  def __init__(self, assistant: Assistant, logger: logging.Logger) -> None:
+  def __init__(
+    self,
+    *,
+    session_factory=async_session,
+    assistant: Assistant,
+    logger: logging.Logger,
+  ) -> None:
     self.logger = logger
-    self.scheduler = AsyncIOScheduler()
-    self.active_schedules: dict[str, ScheduleRequest] = {}
 
-    self.engine_en = Engine('en', logger)
-    self.engine_fr = Engine('fr', logger)
+    self._engine_en = Engine('en', logger)
+    self._engine_fr = Engine('fr', logger)
 
-    self.agent = assistant.create_agent(
+    self._session_factory = session_factory
+    self._subscribers: set[tuple[tuple[str, ...], ScheduleQueue]] = set()
+    self._watcher_task: asyncio.Task | None = None
+
+    self._agent = assistant.create_agent(
       system=(
         'You are a scheduling assistant.\n\n'
         'Always return exactly one well-formed JSON object.\n'
@@ -57,56 +74,179 @@ class Controller:
     )
 
   def get_engine(self, language: SupportedLanguage) -> Engine:
-    return self.engine_fr if language == 'fr' else self.engine_en
+    return self._engine_fr if language == 'fr' else self._engine_en
 
-  async def call_webhook(self, webhook_url: str, payload: dict) -> WebhookResponse:
-    """Call the external webhook with the given payload"""
-    try:
-      async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(webhook_url, json=payload)
-        return WebhookResponse(success=response.is_success, message=response.text, status_code=response.status_code)
-    except Exception as exception:
-      self.logger.error(f'Webhook call failed: {exception!s}')
-      return WebhookResponse(success=False, message=str(exception), status_code=500)
-
-  async def trigger_schedule(self, schedule_id: str):
-    """Handle the triggered schedule"""
-    schedule = self.active_schedules.get(schedule_id)
-    if not schedule:
-      self.logger.warning(f'Schedule {schedule_id} not found')
-      return
-
-    # Prepare webhook payload
-    payload = schedule.webhook_payload or {}
-    payload.update(
-      {
-        'event_type': schedule.type,
-        'message': schedule.label,
-        'triggered_at': datetime.now().isoformat(),
-        'schedule_id': schedule_id,
-      }
-    )
-
-    # Call webhook
-    webhook_response = await self.call_webhook(schedule.webhook_url, payload)
-
-    if webhook_response.success:
-      self.logger.info(f'Successfully triggered schedule {schedule_id}')
-    else:
-      self.logger.error(
-        f'Failed to trigger schedule {schedule_id}. Status: {webhook_response.status_code}, Error: {webhook_response.message}'
+  async def create_schedule(self, payload: SchedulePayload) -> ScheduleRecord:
+    async with self._session_factory() as session:
+      schedule = Schedule(
+        type=payload.type,
+        label=payload.label,
+        timezone=payload.timezone,
+        is_recurring=payload.is_recurring,
+        tags=payload.tags,
+        scheduled_time=payload.time if not isinstance(payload, TimerPayload) else None,
+        duration_seconds=payload.duration if isinstance(payload, TimerPayload) else None,
       )
 
-    # Clean up if not recurring
-    if not schedule.is_recurring:
-      self.active_schedules.pop(schedule_id, None)
+      session.add(schedule)
+      await session.commit()
+      await session.refresh(schedule)
 
-  async def process_natural_language(self, request: NaturalLanguageRequest, language: str) -> tuple[str, ScheduleRequest]:
-    engine = self.engine_en if language == 'en' else self.engine_fr
+      return ScheduleRecord(
+        id=schedule.id,  # type: ignore
+        type=schedule.type.value,
+        scheduled_time=schedule.scheduled_time,  # type: ignore
+        label=schedule.label,  # type: ignore
+        tags=schedule.tags,  # type: ignore
+      )
+
+  async def update_schedule(self, schedule_id: uuid.UUID, payload: SchedulePayload) -> Schedule:
+    """
+    Update an existing schedule with the provided data. Only mutable fields
+    will be overwritten; the schedule's ID is immutable.
+
+    The update respects timezone correctness and validates that any new
+    datetime fields are properly timezone-aware and in the future when
+    required.
+
+    Raises HTTPException 404 if the schedule does not exist.
+    """
+    async with self._session_factory() as session:
+      result = await session.execute(select(Schedule).where(Schedule.id == schedule_id))
+      schedule = result.scalar_one_or_none()
+
+      if schedule is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Schedule not found')
+
+      # Update mutable fields from payload
+      schedule.label = payload.label  # type: ignore
+      schedule.timezone = payload.timezone  # type: ignore
+      schedule.is_recurring = payload.is_recurring  # type: ignore
+      schedule.tags = payload.tags  # type: ignore
+
+      if isinstance(payload, TimerPayload):
+        schedule.duration = payload.duration
+      else:
+        # Ensure time is timezone-aware and in future
+        if payload.time.tzinfo is None:
+          raise HTTPException(status_code=400, detail='Datetime must be timezone-aware')
+
+        if payload.time <= datetime.now(tz=payload.time.tzinfo):
+          raise HTTPException(status_code=400, detail='Datetime must be in the future')
+
+        schedule.time = payload.time
+
+      session.add(schedule)
+      await session.commit()
+      await session.refresh(schedule)
+
+      return schedule
+
+  async def get_due_schedules(self, now: datetime) -> list[Schedule]:
+    async with self._session_factory() as session:
+      result = await session.execute(
+        select(Schedule).where((Schedule.scheduled_time <= now) & Schedule.scheduled_time.isnot(None))
+      )
+      return result.scalars().all()  # type: ignore
+
+  async def delete_schedule(self, schedule_id: str) -> None:
+    async with self._session_factory() as session:
+      result = await session.execute(select(Schedule).where(Schedule.id == schedule_id))
+      schedule = result.scalar_one_or_none()
+
+      if not schedule:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Schedule not found')
+
+      await session.delete(schedule)
+      await session.commit()
+
+  @staticmethod
+  def schedule_to_record(schedule: Schedule) -> ScheduleRecord:
+    return ScheduleRecord(
+      id=schedule.id,  # type: ignore
+      type=schedule.type,  # type: ignore
+      label=schedule.label,  # type: ignore
+      scheduled_time=schedule.scheduled_time,  # type: ignore
+      tags=schedule.tags,  # type: ignore
+    )
+
+  async def watcher(self) -> None:
+    while True:
+      now = get_current_datetime(TIMEZONE)
+      due = await self.get_due_schedules(now)
+
+      for item in due:
+        for tags, queue in self._subscribers:
+          self.logger.debug(f'Filtering {item} against tags {tags}')
+
+          if any(tag in tags for tag in item.tags):
+            record = Controller.schedule_to_record(item)
+
+            await queue.put(record)
+
+        if item.is_recurring and item.scheduled_time:  # type: ignore
+          # For recurring alarms/reminders, add 1 day and update
+          next_time = item.scheduled_time + timedelta(days=1)
+
+          async with self._session_factory() as session:
+            db_item = await session.get(Schedule, item.id)
+
+            if db_item:
+              db_item.scheduled_time = next_time  # type: ignore
+              await session.commit()
+        else:
+          self.logger.debug(f'Deleting {item} from schedule')
+          await self.delete_schedule(item.id)  # type: ignore
+
+      await asyncio.sleep(1)
+
+  async def register_subscriber(
+    self,
+    tags: FilterTags,
+    queue: ScheduleQueue,
+  ) -> None:
+    self._subscribers.add((tuple(tags), queue))
+
+  async def unregister_subscriber(
+    self,
+    tags: FilterTags,
+    queue: ScheduleQueue,
+  ) -> None:
+    self._subscribers.discard((tuple(tags), queue))
+
+  async def start_watcher(self) -> None:
+    if self._watcher_task is None or self._watcher_task.done():
+      self._watcher_task = asyncio.create_task(self.watcher())
+
+  async def stop_watcher(self) -> None:
+    if self._watcher_task and not self._watcher_task.done():
+      self._watcher_task.cancel()
+
+      try:
+        await self._watcher_task
+      except asyncio.CancelledError:
+        pass
+      finally:
+        self._watcher_task = None
+
+  async def get_schedule_records(self, tags: FilterTags, type_filter: ScheduleType | None) -> list[ScheduleRecord]:
+    async with self._session_factory() as session:
+      statement = select(Schedule)
+
+      if type_filter:
+        statement = statement.where((Schedule.type == type_filter))
+
+      result = await session.execute(statement)
+      rows = result.scalars().all()
+
+      return [Controller.schedule_to_record(row) for row in rows if any(tag in row.tags for tag in tags)]
+
+  async def process_natural_language(self, request: NaturalLanguageRequest, language: str) -> tuple[str, SchedulePayload]:
+    engine = self._engine_en if language == 'en' else self._engine_fr
     _score, retrieved = engine.predict(request.text)
 
     try:
-      result = await self.agent.generate(
+      result = await self._agent.generate(
         options=Options(temperature=0.2),
         prompt=(
           'Here is an example:\n'
@@ -139,8 +279,7 @@ class Controller:
             time=dateutil.parser.parse(model['time']),
             timezone=request.timezone,
             is_recurring=model.get('is_recurring', False),
-            webhook_url='http://example.com',
-            webhook_payload=None,
+            tags=request.tags,
           )
 
         case 'timer':
@@ -152,8 +291,7 @@ class Controller:
             timezone=request.timezone,
             duration=model['duration'],
             is_recurring=model.get('is_recurring', False),
-            webhook_url='http://example.com',
-            webhook_payload=None,
+            tags=request.tags,
           )
 
         case 'reminder':
@@ -165,8 +303,7 @@ class Controller:
             time=dateutil.parser.parse(model['time']),
             timezone=request.timezone,
             is_recurring=model.get('is_recurring', False),
-            webhook_url='http://example.com',
-            webhook_payload=None,
+            tags=request.tags,
           )
 
         case 'error':
@@ -183,50 +320,13 @@ class Controller:
       self.logger.error(f'Failed to parse natural language: {exception!s}')
       raise HTTPException(status_code=400, detail=f'Could not understand request: {exception!s}') from exception
 
-  async def schedule(self, schedule: ScheduleRequest) -> ScheduleRecord:
-    schedule_id = str(uuid.uuid4())
-
-    # For timers, calculate the trigger time from duration
-    if isinstance(schedule, TimerPayload):
-      schedule_time = datetime.now() + schedule.duration
-    else:
-      schedule_time = schedule.time
-
-    # Store the schedule
-    self.active_schedules[schedule_id] = schedule
-
-    # Schedule the job
-    if isinstance(schedule, AlarmPayload) and schedule.is_recurring:
-      self.scheduler.add_job(
-        self.trigger_schedule,
-        'cron',
-        hour=schedule_time.hour,
-        minute=schedule_time.minute,
-        args=[schedule_id],
-        id=schedule_id,
-        timezone=schedule.timezone,
-      )
-    else:
-      self.scheduler.add_job(self.trigger_schedule, 'date', run_date=schedule_time, args=[schedule_id], id=schedule_id)
-
-    self.logger.info(f'Created schedule {schedule_id} for {schedule_time}')
-
-    return ScheduleRecord(
-      id=schedule_id,
-      type=schedule.type,  # type: ignore
-      label=schedule.label,
-      scheduled_time=schedule_time,
-      webhook_url=schedule.webhook_url,
-      status='scheduled',
-    )
-
   class Response(BaseModel):
     ok: bool
-    id: str | None = Field(..., description='The unique ID of the schedule.')
+    id: uuid.UUID | None = Field(..., description='The unique ID of the schedule.')
     type: ScheduleType | None = Field(..., description='Type of scheduled record')
     input: str = Field(..., description='User input that triggered the response')
     message: str | None = Field(..., description='Message generated by the agent to confirm the scheduled action')
-    data: ScheduleRequest | None = Field(..., description='Data associated with the response')
+    data: SchedulePayload | None = Field(..., description='Data associated with the response')
 
   class UnknowServiceError(ValueError):
     ...

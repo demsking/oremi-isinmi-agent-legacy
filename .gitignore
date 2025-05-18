@@ -25,6 +25,7 @@ coverage
 *.tsbuildinfo
 *.kate-swp
 *.log
+*.sqlite
 .directory
 .coverage
 .devbox/

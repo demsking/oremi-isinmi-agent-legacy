@@ -27,7 +27,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "apscheduler>=3.11.0",
+  "aiosqlite>=0.21.0",
   "faiss-cpu>=1.11.0",
   "fastapi[standard]>=0.115.12",
   "hf-xet>=1.1.0",
@@ -38,7 +38,8 @@ dependencies = [
   "oremi-core>=2.5.3",
   "pytz>=2025.2",
   "sentence-transformers>=4.1.0",
-  "symspellpy>=6.9.0"
+  "sqlalchemy>=2.0.41",
+  "symspellpy>=6.9.0",
 ]
 
 [project.urls]

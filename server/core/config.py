@@ -13,55 +13,64 @@
 # limitations under the License.
 # ==============================================================================
 import multiprocessing
-import os
 
 from oremi_core.vars import getenv
 
-from .package import APP_NAME
-from .package import APP_VERSION
-
-HOST = getenv('HOST', default='127.0.0.1')
+HOST: str = getenv('HOST', default='127.0.0.1')
 """
 Host address to listen on.
 """
 
-PORT = getenv('PORT', default=7337, expected_type=int)
+PORT: int = getenv('PORT', default=7337, expected_type=int)
 """
 Port number to listen on.
 """
 
-OLLAMA_BASEURL = getenv('OLLAMA_BASEURL')
+OLLAMA_BASEURL: str = getenv('OLLAMA_BASEURL')
 """
 Base URL of the Ollama API.
 Required for communication with Ollama services.
 """
 
-OLLAMA_MODEL = getenv('OLLAMA_MODEL', default='llama3.2')
+OLLAMA_MODEL: str = getenv('OLLAMA_MODEL', default='llama3.2')
 """
 Model name to use for Ollama services.
 """
 
-USER_AGENT = getenv('USER_AGENT', default=f'{APP_NAME}/{APP_VERSION}')
-"""
-User agent string for HTTP requests.
-
-This string identifies the application and its version in HTTP requests.
-"""
-
-CACHE_DIR = getenv('CACHE_DIR', default=os.path.expanduser(f'~/.cache/{APP_NAME}'))
-"""The directory in which to store cached data."""
-
-ROOT_PATH = getenv('ROOT_PATH', default='/')
+ROOT_PATH: str = getenv('ROOT_PATH', default='/')
 """The root path for the API, which defines the base URL path for all routes."""
 
-LOG_FILE = getenv('LOG_FILE', default='')
+LOG_FILE: str = getenv('LOG_FILE', default='')
 """Path to the log file where application logs will be stored. If left empty, logs may be directed
 to the console by default."""
 
-LOG_LEVEL = getenv('LOG_LEVEL', default='INFO')
-"""The log level used to control the verbosity of application logs. Options include 'DEBUG', 'INFO',
-'WARNING', 'ERROR', and 'CRITICAL'."""
+LOG_LEVEL: str = getenv('LOG_LEVEL', default='INFO', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
+"""The log level used to control the verbosity of application logs."""
 
-WORKERS = getenv('WORKERS', default=multiprocessing.cpu_count(), expected_type=int)
-"""The number of worker processes to run for handling incoming API requests. By default, it uses
-the number of CPU cores available on the system."""
+STORE_URL: str = getenv('STORE_URL', default='sqlite+aiosqlite:///store.sqlite')
+"""The connection URL for the SQLAlchemy store."""
+
+TIMEZONE: str = getenv('TZ', default='UTC')
+"""
+The timezone used for scheduling tasks (e.g., 'UTC', 'Africa/Douala').
+"""
+
+EXECUTOR_THREADPOOL_SIZE: int = getenv('EXECUTOR_THREADPOOL_SIZE', default=multiprocessing.cpu_count(), expected_type=int)
+"""
+Maximum number of threads used by the default ThreadPoolExecutor.
+"""
+
+EXECUTOR_PROCESSPOOL_SIZE: int = getenv('EXECUTOR_PROCESSPOOL_SIZE', default=5, expected_type=int)
+"""
+Maximum number of processes used by the ProcessPoolExecutor.
+"""
+
+JOB_COALESCE: bool = getenv('JOB_COALESCE', default=False, expected_type=bool)
+"""
+Whether to coalesce missed job runs into one.
+"""
+
+JOB_MAX_INSTANCES: int = getenv('JOB_MAX_INSTANCES', default=3, expected_type=int)
+"""
+Maximum number of concurrently running instances allowed for the same job.
+"""

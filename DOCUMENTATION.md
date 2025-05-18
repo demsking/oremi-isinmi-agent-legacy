@@ -53,8 +53,10 @@ services:
     depends_on:
       - ollama
     volumes:
-      - ~/.config/oremi-isinmi-agent:/var/cache/oremi-isinmi-agent
+      - ./store:/store
     environment:
+      TZ: UTC
+      STORE_URL: sqlite+aiosqlite:////store/isinmi.sqlite
       OLLAMA_BASEURL: http://ollama:11434
 
   ollama:
@@ -81,16 +83,6 @@ of these variables, grouped by their purpose.
 
 - **HOST**: The host address on which the application will listen. Default is `"127.0.0.1"`.
 - **PORT**: The port number on which the application will listen. Default is `7337`.
-- **USER_AGENT**: User agent string for HTTP requests. This string identifies
-  the application and its version in HTTP requests. Default is
-  `"<APP_NAME>/<APP_VERSION>"`.
-
-### Caching Configuration
-
-These variables control HTTP request behavior and caching settings.
-
-- **CACHE_DIR**:
-  The directory in which to store cached data. Defaults to `'/usr/local/cache'`.
 
 ### Ollama Configuration
 
@@ -111,10 +103,57 @@ These variables control the API root path, logging behavior, and server settings
   Controls the verbosity of logs. Options: `'DEBUG'`, `'INFO'`, `'WARNING'`,
   `'ERROR'`, `'CRITICAL'`. Defaults to `'INFO'`.
 
-### Performance Configuration
+### Task Scheduling Configuration
 
-Settings that control the server's performance.
+**Oremi Isinmi Agent** supports task scheduling for features such as alarms,
+reminders, and timers. The following environment variables allow you to
+configure how scheduled tasks are stored, executed, and managed:
 
-- **WORKERS**:
-  The number of worker processes for handling requests. Defaults to the
-  number of CPU cores on the system.
+- **STORE_URL**: The connection URL for the storage backend used to persist
+  scheduled tasks. Default is `"sqlite+aiosqlite:///store.sqlite"`. For example:
+  - `"sqlite+aiosqlite:///store.sqlite"` for SQLite
+  - `"postgresql+psycopg2://user:password@localhost/dbname"` for PostgreSQL
+  - `"mysql+pymysql://user:password@localhost/dbname"` for MySQL
+
+- **TIMEZONE**: Timezone used for scheduling tasks. Default is `"UTC"`.
+  Use values such as `"Africa/Douala"` or `"Europe/Paris"` depending on your
+  region.
+
+- **EXECUTOR_THREADPOOL_SIZE**: Maximum number of threads used by the default
+  ThreadPoolExecutor. Defaults to the number of CPU cores available on the
+  system (detected via `multiprocessing.cpu_count()`).
+
+- **EXECUTOR_PROCESSPOOL_SIZE**: Maximum number of processes in the
+  process pool executor. Default is `5`.
+
+- **JOB_COALESCE**: Whether to coalesce (merge) missed job runs into one
+  execution. Default is `false`.
+
+- **JOB_MAX_INSTANCES**: Maximum number of concurrent instances allowed per
+  job. Default is `3`.
+
+#### How It Works
+
+The scheduler uses the configured `STORE_URL` to persist scheduled jobs,
+ensuring tasks survive application restarts. Thread and process pool sizes
+control concurrency for running jobs. Timezone ensures correct timing
+across regions. Coalescing avoids running missed jobs multiple times if the
+scheduler was down. Maximum instances prevent the same job from overlapping
+too much.
+
+Defaults provide a balanced configuration but can be adjusted to your
+environment and workload.
+
+Example configuration in your `.env` file:
+
+```env
+STORE_URL=postgresql+psycopg2://user:pass@localhost/schedule
+TIMEZONE=Africa/Douala
+EXECUTOR_THREADPOOL_SIZE=10
+EXECUTOR_PROCESSPOOL_SIZE=4
+JOB_COALESCE=false
+JOB_MAX_INSTANCES=3
+```
+
+This configuration ensures robust and customizable scheduling for all time-based
+features in the Oremi Isinmi Agent.

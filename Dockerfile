@@ -41,9 +41,7 @@ ENV TZ=UTC
 ENV HOST="0.0.0.0"
 ENV PORT=7337
 
-ENV CACHE_DIR="/var/cache/oremi-isinmi-agent"
-
-ENV OLLAMA_MODEL="demsking/oremi:latest"
+ENV OLLAMA_MODEL="llama3.2"
 ENV OLLAMA_BASEURL=
 
 ENV LOG_LEVEL="info"
