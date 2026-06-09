@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import json
 import logging
+import shutil
+from pathlib import Path
 from typing import Any
 from typing import ClassVar
 from typing import Literal
@@ -23,6 +24,7 @@ import numpy as np
 from oremi_core.event import Event
 from sentence_transformers import SentenceTransformer
 
+from .config import CACHE_DIR
 from .package import PROJECT_DIRECTORY
 from .spellchecker import SpellChecker
 
@@ -64,19 +66,50 @@ class Engine:
   async def load(self) -> None:
     if not self.ready.is_set() and not self.loading:
       self.loading = True
-
-      self.load_model()
-      self.load_index()
-      self.spellchecker.load_dictionaries()
-      self.ready.set()
+      try:
+        self.load_model()
+        self.load_index()
+        self.spellchecker.load_dictionaries()
+        self.ready.set()
+      finally:
+        # Always release the loading guard so a failed load can be retried.
+        self.loading = False
     else:
       await self.ready.wait()
 
+  @staticmethod
+  def get_cache_folder() -> Path:
+    cache_dir = Path(CACHE_DIR) / 'sentence-transformers'
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    return cache_dir
+
+  @staticmethod
+  def get_cached_model_dir(cache_folder: Path, model_name: str) -> Path:
+    return cache_folder / f'models--{model_name.replace("/", "--")}'
+
   def load_model(self) -> None:
     model_name = Engine.models[self.language]
+    cache_folder = Engine.get_cache_folder()
 
-    self.logger.info(f'Loading model {model_name}...')
-    self.model = SentenceTransformer(model_name)
+    self.logger.info(f'Loading model {model_name} from cache {cache_folder}...')
+
+    try:
+      self.model = SentenceTransformer(model_name, cache_folder=str(cache_folder))
+    except Exception as error:
+      if 'InvalidHeaderDeserialization' not in str(error):
+        raise
+
+      corrupted_cache = Engine.get_cached_model_dir(cache_folder, model_name)
+      self.logger.warning(f'Corrupted model cache detected at {corrupted_cache}; forcing a clean redownload.')
+      shutil.rmtree(corrupted_cache, ignore_errors=True)
+      self.model = SentenceTransformer(
+        model_name,
+        cache_folder=str(cache_folder),
+        model_kwargs={
+          'force_download': True,
+        },
+      )
 
   def load_index(self) -> None:
     # Load FAISS index

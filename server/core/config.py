@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
 import multiprocessing
 
 from oremi_core.vars import getenv
+
+from .package import APP_NAME
 
 HOST: str = getenv('HOST', default='127.0.0.1')
 """
@@ -32,10 +35,13 @@ Base URL of the Ollama API.
 Required for communication with Ollama services.
 """
 
-OLLAMA_MODEL: str = getenv('OLLAMA_MODEL', default='llama3.2')
+OLLAMA_MODEL: str = getenv('OLLAMA_MODEL', default='qwen2.5:3b')
 """
 Model name to use for Ollama services.
 """
+
+CACHE_DIR = getenv('CACHE_DIR', default=os.path.expanduser(f'~/.cache/{APP_NAME}'))
+"""The directory in which to store cached data."""
 
 ROOT_PATH: str = getenv('ROOT_PATH', default='/')
 """The root path for the API, which defines the base URL path for all routes."""
