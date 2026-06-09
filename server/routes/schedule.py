@@ -139,13 +139,13 @@ def create_schedule_endpoints(tag: str, api: FastAPI, controller: Controller) ->
     ),
     payload: SchedulePayload = Body(
       ...,
-      description='',
+      description='Details of the schedule to update.',
       examples=[
         ReminderPayload.model_validate(
           {
             'type': 'reminder',
             'label': 'Drink water',
-            'time': '2025-12-01T10:25:00Z',
+            'time': datetime.now() + timedelta(hours=1, minutes=25),
             'tags': ['user:9b172e1e-5218-4c95-a786-2c5a1ffeb09c', 'device:13cbddfc-6e97-4dc4-b44a-184d6deed3e3'],
           }
         ),
