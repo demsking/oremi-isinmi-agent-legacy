@@ -12,7 +12,7 @@ weather and geocoding data.
 - Flexible timers with countdown and cancellation support
 - Persistent reminders with optional recurrence
 - Calendar event creation and management
-- Natural language understanding via Ollama (LLaMA3.2)
+- Natural language understanding via Ollama (qwen2.5:3b)
 - Built with a focus on performance and security
 - Easily deployable using the [`demsking/oremi-isinmi-agent`](https://hub.docker.com/r/demsking/oremi-isinmi-agent)
   Docker image.
@@ -29,13 +29,31 @@ port `7337`, which serves the API and documentation endpoints.
 The local documentation can be accessed at `http://localhost:7337/docs` for easy
 reference on available endpoints and usage instructions.
 
+## Volumes
+
+The Oremi Isinmi Agent container uses a volume to persist cached data across
+container restarts and updates. This cache typically stores temporary
+processing results, model artifacts, or other runtime data that improves
+performance and reduces redundant computations.
+
+- **Container path:** `/var/cache/oremi-isinmi-agent`
+- **Recommended host path:** `~/.cache/oremi-isinmi-agent`
+
+The volume is optional but recommended. Without it, cached data will be lost
+when the container is removed, which may lead to increased processing times and
+API latency during subsequent requests.
+
 ### Deploy with Docker
 
 Use the official Docker image [`demsking/oremi-isinmi-agent`](https://hub.docker.com/r/demsking/oremi-isinmi-agent)
 to run Oremi Isinmi Agent:
 
 ```sh
-docker run -d --env-file <path_to_env_file> -p 7337:7337 demsking/oremi-isinmi-agent
+docker run -d \
+  --env-file <path_to_env_file> \
+  -v ~/.cache/oremi-isinmi-agent:/var/cache/oremi-isinmi-agent \
+  -p 7337:7337 \
+  demsking/oremi-isinmi-agent
 ```
 
 Replace `<path_to_env_file>` with the path to your
@@ -52,10 +70,12 @@ services:
     image: demsking/oremi-isinmi-agent
     depends_on:
       - ollama
+    ports:
+      - 7337:7337
     volumes:
       - ./store:/store
+      - ~/.cache/oremi-isinmi-agent:/var/cache/oremi-isinmi-agent
     environment:
-      TZ: UTC
       STORE_URL: sqlite+aiosqlite:////store/isinmi.sqlite
       OLLAMA_BASEURL: http://ollama:11434
 
@@ -87,7 +107,7 @@ of these variables, grouped by their purpose.
 ### Ollama Configuration
 
 - **OLLAMA_BASEURL**: Base URL of the Ollama API. Required for communication with Ollama services.
-- **OLLAMA_MODEL**: Model name to use for Ollama services. Default is `"llama3.2"`.
+- **OLLAMA_MODEL**: Model name to use for Ollama services. Default is `"qwen2.5:3b"`.
 
 ### API and Logging Configuration
 

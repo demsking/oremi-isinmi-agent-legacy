@@ -10,7 +10,7 @@ authors = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
 maintainers = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
 license = { text = "Apache-2.0" }
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.12,<3.13"
 
 classifiers = [
   # How mature is this project? Common values are
@@ -21,14 +21,11 @@ classifiers = [
 
   # Indicate who your project is intended for
   "Intended Audience :: Developers",
-
-  # Specify the Python versions you support here.
-  "Programming Language :: Python :: 3.11",
 ]
 
 dependencies = [
   "aiosqlite>=0.21.0",
-  "faiss-cpu>=1.11.0",
+  "faiss-cpu>=1.14.2",
   "fastapi[standard]>=0.115.12",
   "hf-xet>=1.1.0",
   "hishel>=0.1.2",

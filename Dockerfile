@@ -1,6 +1,6 @@
 #
 ## Stage 1: Builder
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 ENV UV_LINK_MODE=copy
 
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 #
 ## Stage 2: Final
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Set the shell to /bin/bash and enable pipefail
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
@@ -44,18 +44,16 @@ COPY server/ /opt/oremi-isinmi-agent/server
 COPY pyproject.toml LICENSE DOCUMENTATION.md /opt/oremi-isinmi-agent/
 
 ENV PATH="/opt/oremi-isinmi-agent/bin:$PATH"
-ENV PYTHONPATH="/opt/oremi-isinmi-agent:/opt/oremi-isinmi-agent/.venv/lib/python3.11/site-packages"
+ENV PYTHONPATH="/opt/oremi-isinmi-agent:/opt/oremi-isinmi-agent/.venv/lib/python3.12/site-packages"
 ENV PYTHONUNBUFFERED="1"
 ENV PYTHONDONTWRITEBYTECODE="1"
 
 ENV TZ=UTC
-
 ENV HOST="0.0.0.0"
-ENV PORT=7337
+ENV CACHE_DIR="/var/cache/oremi-isinmi-agent"
 
 # Volumes
 VOLUME "/var/cache/oremi-isinmi-agent"
-VOLUME "/root/.cache/huggingface"
 
 # Expose the port
 EXPOSE 7337

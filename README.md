@@ -26,7 +26,7 @@ Find the Oremi Isinmi Agent deployment and API documentation at
 - Flexible timers with countdown and cancellation support
 - Persistent reminders with optional recurrence
 - Calendar event creation and management
-- Natural language understanding via Ollama (LLaMA3.2)
+- Natural language understanding via Ollama (qwen2.5:3b)
 - Built with a focus on performance and security
 - Easily deployable using the [`demsking/oremi-isinmi-agent`](https://hub.docker.com/r/demsking/oremi-isinmi-agent)
   Docker image.

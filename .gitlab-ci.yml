@@ -5,7 +5,7 @@
 # Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
-image: python:3.11-alpine3.19
+image: python:3.12-alpine3.19
 
 stages:
   # - build
@@ -14,7 +14,7 @@ stages:
 
 variables:
   UV_VERSION: 0.7.3
-  PYTHON_VERSION: 3.11
+  PYTHON_VERSION: 3.12
   BASE_LAYER: bookworm-slim
   # GitLab CI creates a separate mountpoint for the build directory,
   # so we need to copy instead of using hard links.
@@ -44,7 +44,7 @@ pages:
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
   script:
     - uv sync
-    - export PYTHONPATH=.:.venv/lib/python3.11/site-packages:$PYTHONPATH
+    - export PYTHONPATH=.:.venv/lib/python3.12/site-packages:$PYTHONPATH
     - python scripts/generate-openapi.py > doc/openapi.json
     - cp -r doc/ public/
     - ls -lah public/
