@@ -3,7 +3,7 @@
 exclude: ^(tests)/.*
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         name: 'Trailing Whitespace Remover'
@@ -47,11 +47,11 @@ repos:
         name: 'Requirements.txt Fixer'
         description: 'Sorts entries in requirements.txt files and removes duplicates.'
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.7.3
+    rev: 0.11.19
     hooks:
       - id: uv-lock
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
+    rev: v1.5.6
     hooks:
       - id: insert-license
         name: 'Insert License Header'
@@ -64,7 +64,7 @@ repos:
           '--no-extra-eol',
         ]
   - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.14.0
+    rev: v3.16.0
     hooks:
       - id: reorder-python-imports
         name: 'Reorder Python Imports'
@@ -84,7 +84,7 @@ repos:
         language: system
         files: Dockerfile
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.11.9
+    rev: v0.15.16
     hooks:
       - id: ruff
         name: 'Ruff Linter'
@@ -105,14 +105,14 @@ repos:
         name: 'Enforce Type Annotations'
         description: 'Ensures Python functions and methods use type annotations.'
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.3
+    rev: 1.9.4
     hooks:
       - id: bandit
         name: 'Bandit Security Linter'
         description: 'Runs Bandit to find common security issues in Python code.'
         args: [-c, bandit.yaml]
   - repo: https://github.com/PyCQA/doc8
-    rev: v1.1.2
+    rev: v2.0.0
     hooks:
       - id: doc8
         name: 'Doc8 Documentation Linter'
