@@ -1,11 +1,11 @@
 #
 ## Stage 1: Builder
-FROM python:3.12-slim AS builder
+FROM python:3.12-alpine3.21 AS builder
 
 ENV UV_LINK_MODE=copy
 
-# Set the shell to /bin/bash and enable pipefail
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+# Set the shell to /bin/ash and enable pipefail
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -26,22 +26,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 #
 ## Stage 2: Final
-FROM python:3.12-slim
+FROM python:3.12-alpine3.21
 
-# Set the shell to /bin/bash and enable pipefail
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
-
-# Copy the environment, but not the source code
-COPY --from=builder --chown=oremi:oremi /app/.venv /opt/oremi-isinmi-agent/.venv
-
-# Binaries
-COPY bin/* /opt/oremi-isinmi-agent/bin/
-RUN chmod +x /opt/oremi-isinmi-agent/bin/*
-
-# Copy application files
-COPY models/ /opt/oremi-isinmi-agent/models
-COPY server/ /opt/oremi-isinmi-agent/server
-COPY pyproject.toml LICENSE DOCUMENTATION.md /opt/oremi-isinmi-agent/
+# Set the shell to /bin/ash and enable pipefail
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 ENV PATH="/opt/oremi-isinmi-agent/bin:$PATH"
 ENV PYTHONPATH="/opt/oremi-isinmi-agent:/opt/oremi-isinmi-agent/.venv/lib/python3.12/site-packages"
@@ -54,6 +42,21 @@ ENV STORE_URL="sqlite+aiosqlite:///var/config/oremi-isinmi-agent/store.sqlite"
 
 # Volumes
 VOLUME "/var/config/oremi-isinmi-agent"
+
+# Install dependencies
+RUN apk update \
+  && apk add --no-cache tzdata
+
+# Copy the environment, but not the source code
+COPY --from=builder --chown=oremi:oremi /app/.venv /opt/oremi-isinmi-agent/.venv
+
+# Binaries
+COPY bin/* /opt/oremi-isinmi-agent/bin/
+RUN chmod +x /opt/oremi-isinmi-agent/bin/*
+
+# Copy application files
+COPY server/ /opt/oremi-isinmi-agent/server
+COPY pyproject.toml LICENSE DOCUMENTATION.md /opt/oremi-isinmi-agent/
 
 # Expose the port
 EXPOSE 7337

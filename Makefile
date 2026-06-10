@@ -68,10 +68,20 @@ update:
 
 #
 ## Packaging
-image:
+build/context:
+	@if ! docker buildx inspect $(APP_NAME) > /dev/null 2>&1; then \
+		docker buildx create --name $(APP_NAME) --bootstrap; \
+	fi
+	mkdir -p build/
+	touch $@
+
+image: build/context
 	@echo "Building $(IMAGE_NAME):$(APP_VERSION)"
 	uv lock
-	docker build . \
+	docker buildx use $(APP_NAME)
+	docker buildx build . \
+	  --platform linux/amd64,linux/arm64 \
+	  --push \
 	  --progress plain \
 	  --tag $(IMAGE_NAME):$(APP_VERSION) \
 	  --tag $(IMAGE_NAME):latest \
@@ -85,14 +95,11 @@ image:
 	  --label "org.opencontainers.image.licenses=$(shell python scripts/metadata.py license)"
 
 image-test:
-	uv lock
 	docker build . \
 	  --progress plain \
 	  --tag $(IMAGE_NAME):test
 
-publish: image
-	git commit pyproject.toml uv.lock -m "Release $(APP_VERSION)"
-	docker push $(IMAGE_NAME):$(APP_VERSION)
-	docker push $(IMAGE_NAME):latest
+publish: image-test
 	git tag v$(APP_VERSION)
+	$(MAKE) image
 	git push --tags origin main
