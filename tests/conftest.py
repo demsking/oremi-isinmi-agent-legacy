@@ -54,17 +54,46 @@ def language():
 @pytest.fixture(autouse=True)
 def mock_ollama(monkeypatch):
     import ollama
+    from pydantic_ai import Agent
+    from server.core.controller import AgentResult
+    from server.core.models import AlarmPayload
+    from datetime import datetime, timezone
     
     class MockResponse:
-        response = '{"type": "alarm", "label": "test", "time": "2026-06-10T03:31:33Z", "creation_message": "test"}'
+        response = '{"action": "create", "type": "alarm", "label": "test", "time": "2026-06-10T03:31:33Z", "creation_message": "test"}'
     
     async def mock_generate(*args, **kwargs):
         return MockResponse()
+        
+    async def mock_pull(*args, **kwargs):
+        return None
+        
+    class MockRunResult:
+        def __init__(self):
+            self.output = AgentResult(
+                action="create",
+                id="d420613a-34a9-4224-8907-117551515099",
+                type="alarm",
+                message="Alarm created for 10 AM tomorrow.",
+                data=AlarmPayload(
+                    label="test",
+                    time=datetime(2030, 6, 11, 10, 0, 0, tzinfo=timezone.utc),
+                    timezone="Europe/Paris",
+                    is_recurring=False,
+                    tags=["user:9b172e1e-5218-4c95-a786-2c5a1ffeb09c"]
+                )
+            )
+            self.data = self.output
+            
+    async def mock_run(*args, **kwargs):
+        return MockRunResult()
     
     monkeypatch.setattr(ollama.AsyncClient, "generate", mock_generate)
+    monkeypatch.setattr(ollama.AsyncClient, "pull", mock_pull)
+    monkeypatch.setattr(Agent, "run", mock_run)
     
 @pytest.fixture
-def create_schedule_from_natural_language_schedules_natural_post_payload():
+def handle_agent_message_agent_message_post_payload():
   return {
     "text": "Set a reminder for a meeting at 10 AM tomorrow.",
     "timezone": "Europe/Paris",
@@ -73,4 +102,3 @@ def create_schedule_from_natural_language_schedules_natural_post_payload():
       "device:13cbddfc-6e97-4dc4-b44a-184d6deed3e3"
     ]
   }
-

@@ -6,10 +6,10 @@ from server import api
 client = TestClient(api, backend='asyncio')
 
 
-async def test_create_schedule_from_natural_language_schedules_natural_post(create_schedule_from_natural_language_schedules_natural_post_payload):
-  """Create Schedule From Natural Language"""
-  path = '/api/schedules/natural?language=en'
-  payload = create_schedule_from_natural_language_schedules_natural_post_payload
+async def test_handle_agent_message_agent_message_post(handle_agent_message_agent_message_post_payload):
+  """Handle Agent Message"""
+  path = '/api/agent/message?language=en'
+  payload = handle_agent_message_agent_message_post_payload
   response = client.post(path, json=payload)
   assert response.status_code == 201
 

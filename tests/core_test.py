@@ -1,5 +1,6 @@
 import pytest
 import asyncio
+import uuid
 from datetime import datetime, timedelta, timezone
 from server.core.controller import Controller
 from server.core.models import AlarmPayload, TimerPayload, ScheduleType, ScheduleRecord
@@ -62,25 +63,26 @@ async def test_get_schedule_records(mock_assistant, mock_logger):
     controller = Controller(assistant=mock_assistant, logger=mock_logger)
     
     now = datetime.now(timezone.utc)
+    test_tag = f"user:record_test_{uuid.uuid4()}"
     
     payload = AlarmPayload(
         label="Tag Alarm",
         time=now + timedelta(hours=2),
         timezone="UTC",
         is_recurring=False,
-        tags=["user:record_test"]
+        tags=[test_tag]
     )
     record = await controller.create_schedule(payload)
     
-    records = await controller.get_schedule_records(tags=["user:record_test"], type_filter=None)
+    records = await controller.get_schedule_records(tags=[test_tag], type_filter=None)
     assert len(records) == 1
     assert records[0].label == "Tag Alarm"
     
     # test type filter
-    records_filtered = await controller.get_schedule_records(tags=["user:record_test"], type_filter=ScheduleType.ALARM)
+    records_filtered = await controller.get_schedule_records(tags=[test_tag], type_filter=ScheduleType.ALARM)
     assert len(records_filtered) == 1
     
-    records_empty = await controller.get_schedule_records(tags=["user:record_test"], type_filter=ScheduleType.REMINDER)
+    records_empty = await controller.get_schedule_records(tags=[test_tag], type_filter=ScheduleType.REMINDER)
     assert len(records_empty) == 0
     
     await controller.delete_schedule(record.id)

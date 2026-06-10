@@ -33,6 +33,7 @@ dependencies = [
   "langid>=1.1.6",
   "ollama>=0.4.8",
   "oremi-core>=2.5.3",
+  "pydantic-ai>=1.44.0",
   "pytz>=2025.2",
   "sentence-transformers>=4.1.0",
   "sqlalchemy>=2.0.41",
@@ -66,3 +67,5 @@ report_only = false
 
 [tool.pytest.ini_options]
 python_functions = "test_"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
