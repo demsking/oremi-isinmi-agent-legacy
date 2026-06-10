@@ -31,8 +31,6 @@ from sqlalchemy import select
 from .assistant import Assistant
 from .config import TIMEZONE
 from .database import async_session
-from .engine import Engine
-from .engine import SupportedLanguage
 from .models import AlarmPayload
 from .models import NaturalLanguageRequest
 from .models import ReminderPayload
@@ -62,7 +60,7 @@ class AgentResult(BaseModel):
   id: uuid.UUID | None = Field(None, description='The unique ID of the schedule (for create, update, delete).')
   type: ScheduleType | None = Field(None, description='The type of the schedule if applicable.')
   message: str = Field(..., description='A friendly confirmation or response message for the user.')
-  data: ScheduleRecord | list[ScheduleRecord] | None = Field(
+  data: ScheduleRecord | SchedulePayload | list[ScheduleRecord] | None = Field(
     None, description='The payload of the created/updated schedule, or the list of schedules retrieved for read.'
   )
 
@@ -76,10 +74,6 @@ class Controller:
     logger: logging.Logger,
   ) -> None:
     self.logger = logger
-
-    self._engine_en = Engine('en', logger)
-    self._engine_fr = Engine('fr', logger)
-
     self._session_factory = session_factory
     self._subscribers: set[tuple[tuple[str, ...], ScheduleQueue]] = set()
     self._watcher_task: asyncio.Task | None = None
@@ -300,9 +294,6 @@ class Controller:
         f"- 'message' must be a friendly confirmation message.\n"
         f"- 'data' must NOT be null. For 'create' or 'update', it MUST be the payload used to create/update that schedule (including label, time/duration, timezone, is_recurring, tags). For 'read', it must be the list of schedule records returned by the tool."
       )
-
-  def get_engine(self, language: SupportedLanguage) -> Engine:
-    return self._engine_fr if language == 'fr' else self._engine_en
 
   async def create_schedule(self, payload: SchedulePayload) -> ScheduleRecord:
     async with self._session_factory() as session:

@@ -50,10 +50,10 @@ ENV PYTHONDONTWRITEBYTECODE="1"
 
 ENV TZ=UTC
 ENV HOST="0.0.0.0"
-ENV CACHE_DIR="/var/cache/oremi-isinmi-agent"
+ENV STORE_URL="sqlite+aiosqlite:///var/config/oremi-isinmi-agent/store.sqlite"
 
 # Volumes
-VOLUME "/var/cache/oremi-isinmi-agent"
+VOLUME "/var/config/oremi-isinmi-agent"
 
 # Expose the port
 EXPOSE 7337

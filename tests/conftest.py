@@ -41,14 +41,6 @@ def schedule_id():
   return "123e4567-e89b-12d3-a456-426614174000"
 
 
-@pytest.fixture
-def preload_model_model_post_payload():
-  return None
-
-
-@pytest.fixture
-def language():
-  return "fr"
 
 
 @pytest.fixture(autouse=True)

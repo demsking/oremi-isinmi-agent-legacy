@@ -1,4 +1,4 @@
-# Copyright 2025 Sébastien Demanou. All Rights Reserved.
+# Copyright 2025-2026 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ from pydantic import ValidationError
 
 from .core.api import BASE_PATH
 from .core.assistant import Assistant
-from .core.config import CACHE_DIR
 from .core.config import EXECUTOR_PROCESSPOOL_SIZE
 from .core.config import EXECUTOR_THREADPOOL_SIZE
 from .core.config import HOST
@@ -68,12 +67,10 @@ schedule_tag = {
 }
 
 agent_tag = {
-  'name': 'Agents Endpoints',
+  'name': 'Agent Endpoints',
   'description': (
-    'Endpoints for natural language interaction and model management. These '
-    'include preloading language models and creating schedules from user '
-    'input using natural language, enabling intelligent and context-aware '
-    'automation.'
+    'Endpoints for natural language interaction with Oremi Isinmi and event '
+    'creation, cancellation and retrieval using natural language.'
   ),
 }
 
@@ -95,7 +92,6 @@ async def lifespan(app: FastAPI):
   logger.info(f'Server Root Path: {ROOT_PATH}')
   logger.info(f'API Root Path: {ROOT_PATH}')
   logger.info(f'API Base Path: {BASE_PATH}')
-  logger.info(f'Cache Directory: {CACHE_DIR}')
   logger.info(f'Ollama URL: {OLLAMA_BASEURL}')
   logger.info(f'Ollama Model: {OLLAMA_MODEL}')
   logger.info(f'Store URL: {STORE_URL}')

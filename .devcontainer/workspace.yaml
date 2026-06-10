@@ -8,7 +8,6 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - ..:/workspaces:cached
-      - ~/.cache/huggingface:/root/.cache/huggingface
     command: sleep infinity
 
   ollama:

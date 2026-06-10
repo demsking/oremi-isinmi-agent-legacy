@@ -25,19 +25,15 @@ classifiers = [
 
 dependencies = [
   "aiosqlite>=0.21.0",
-  "faiss-cpu>=1.14.2",
   "fastapi[standard]>=0.115.12",
   "hf-xet>=1.1.0",
   "hishel>=0.1.2",
   "isodate>=0.7.2",
-  "langid>=1.1.6",
   "ollama>=0.4.8",
   "oremi-core>=2.5.3",
   "pydantic-ai>=1.44.0",
   "pytz>=2025.2",
-  "sentence-transformers>=4.1.0",
   "sqlalchemy>=2.0.41",
-  "symspellpy>=6.9.0",
 ]
 
 [project.urls]

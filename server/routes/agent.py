@@ -18,46 +18,13 @@ from datetime import timedelta
 from fastapi import Body
 from fastapi import FastAPI
 from fastapi import HTTPException
-from fastapi import Query
 from fastapi.responses import JSONResponse
 
 from ..core.controller import Controller
-from ..core.engine import SupportedLanguage
-from ..core.models import GenericResponse
 from ..core.models import NaturalLanguageRequest
 
 
 def create_agent_endpoints(tag: str, api: FastAPI, controller: Controller) -> None:
-  @api.post(
-    '/model',
-    tags=[tag],
-    responses={
-      200: {},
-    },
-  )
-  async def preload_model(
-    language: SupportedLanguage = Query(
-      ...,
-      description='The language for which the model should be loaded.',
-      examples=['fr', 'en'],
-    ),
-  ) -> GenericResponse:
-    """
-    Preload a language model.
-
-    Use this endpoint to proactively load the model for a given language. This
-    reduces the response latency for the first natural language request by
-    preparing the engine in advance.
-
-    The model will be initialized if not already loaded. If already active,
-    the call has no adverse effect.
-    """
-    engine = controller.get_engine(language)
-
-    await engine.load()
-
-    return GenericResponse(ok=True)
-
   @api.post(
     '/agent/message',
     tags=[tag],

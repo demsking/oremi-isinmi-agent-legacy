@@ -36,7 +36,7 @@ stats:
 gen-tests:
 	python scripts/generate-tests.py
 
-test:
+tests:
 	uv run pytest -vv
 
 coverage:
@@ -66,61 +66,9 @@ update:
 	devbox update
 	pre-commit autoupdate
 
-
-#
-## Dictionaries
-
-# Dictionaries can be found at:
-# https://github.com/wolfgarbe/SymSpell/tree/master/SymSpell.FrequencyDictionary
-LANGUAGES := en fr
-MODELS_DIR := models/symspell
-DICTIONARY_URLS := https://raw.githubusercontent.com/wolfgarbe/SymSpell/refs/heads/master/SymSpell.FrequencyDictionary
-
-# Define the file names for downloaded dictionaries with language codes
-DICTIONARY_FILES := en-80k.txt fr-100k.txt
-DICTIONARY_MODELS := $(addprefix $(MODELS_DIR)/, $(DICTIONARY_FILES))
-
-# Default target: download all dictionaries
-symspell-models: $(DICTIONARY_MODELS)
-
-# Rule to download each dictionary and rename it with the language code
-$(DICTIONARY_MODELS):
-	mkdir -p $(MODELS_DIR)
-	echo "Downloading and renaming dictionary for $@..." && \
-	curl -o $@ $(DICTIONARY_URLS)/$(notdir $@)
-
-# Clean target to remove downloaded dictionaries
-clean-dictionaries:
-	@echo "Cleaning up..."
-	@rm -f $(MODELS_DIR)
-
-
-#
-## Index
-models/isinmi/en-index.faiss:
-	python scripts/build-index.py --language en
-
-models/isinmi/fr-index.faiss:
-	python scripts/build-index.py --language fr
-
-index: models/isinmi/fr-index.faiss models/isinmi/en-index.faiss
-
-clean-index:
-	rm -rf models/isinmi/
-
-resources: symspell-models index
-clean: clean-dictionaries clean-index
-
-
-#
-## Documentation
-.PHONY: doc/openapi.json
-doc/openapi.json:
-	python scripts/generate-openapi.py > $@
-
 #
 ## Packaging
-image: resources
+image:
 	@echo "Building $(IMAGE_NAME):$(APP_VERSION)"
 	uv lock
 	docker build . \
@@ -136,7 +84,7 @@ image: resources
 	  --label "org.opencontainers.image.vendor=Sébastien Demanou" \
 	  --label "org.opencontainers.image.licenses=$(shell python scripts/metadata.py license)"
 
-image-test: resources
+image-test:
 	uv lock
 	docker build . \
 	  --progress plain \
