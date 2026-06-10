@@ -36,14 +36,14 @@ stats:
 gen-tests:
 	python scripts/generate-tests.py
 
-test: gen-tests
-	pytest -vv
+test:
+	uv run pytest -vv
 
 coverage:
-	pytest --cov=server
+	uv run pytest --cov=server
 
 coverage-html:
-	pytest --cov=server --cov-report=html
+	uv run pytest --cov=server --cov-report=html
 
 lint:
 	pre-commit run --all-files
