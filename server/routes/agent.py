@@ -1,4 +1,4 @@
-# Copyright 2025 Sébastien Demanou. All Rights Reserved.
+# Copyright 2025-2026 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -170,7 +170,7 @@ def create_agent_endpoints(tag: str, api: FastAPI, controller: Controller) -> No
 
       return JSONResponse(
         status_code=201,
-        content=response.model_dump(),
+        content=response.model_dump(mode='json'),
       )  # type: ignore
     except Controller.MissingParameterError as error:
       response = Controller.Response(
@@ -184,7 +184,7 @@ def create_agent_endpoints(tag: str, api: FastAPI, controller: Controller) -> No
 
       return JSONResponse(
         status_code=412,
-        content=response.model_dump(),
+        content=response.model_dump(mode='json'),
       )  # type: ignore
     except Controller.UnknowServiceError as error:
       raise HTTPException(status_code=400, detail=str(error)) from error
