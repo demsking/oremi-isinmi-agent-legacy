@@ -1,4 +1,4 @@
-# Copyright 2025 Sébastien Demanou. All Rights Reserved.
+# Copyright 2025-2026 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -221,23 +221,34 @@ def create_schedule_endpoints(tag: str, api: FastAPI, controller: Controller) ->
         'reminder',
       ],
     ),
+    due: bool = Query(
+      False,
+      alias='due',
+      description='If true, only returns schedules that are due (scheduled time in the past or now).',
+    ),
   ) -> list[ScheduleRecord]:
     """
-    Retrieve all schedules matching provided tags and type filters.
+    Retrieve all schedules matching the provided tags and type filters.
 
-    This endpoint returns a list of scheduled items such as alarms, timers, or
-    reminders filtered by specified tags and schedule type. It allows clients
-    to obtain schedules related to particular users or devices by filtering on
-    tags like "user:<uuid>" or "device:<uuid>", and to further narrow results
-    based on the schedule type (e.g., alarm or timer).
+    This endpoint returns a paginated list of scheduled items (alarms, timers, or reminders)
+    filtered by specified tags and schedule type. It enables clients to obtain schedules
+    related to particular users, devices, or groups by filtering on structured tags.
+
+    Key features:
+    - Filter by multiple tags (OR logic)
+    - Optional type filtering
+    - Option to return only due schedules (scheduled time in the past or now)
+    - Chronological sorting by scheduled time
+    - Automatic deduplication of tags
 
     The schedules returned are those that match at least one of the given tags
     and the optional type filter. Results are sorted chronologically by their
-    scheduled time to facilitate display of upcoming events in client
-    applications.
+    scheduled time to facilitate display of upcoming events in client applications.
     """
-    # schedules = await controller.get_schedule_records(tags, type_filter)
-    schedules = await controller.get_due_schedules(datetime.now())
+    if due:
+      schedules = await controller.get_due_schedules(datetime.now(), type_filter)
+    else:
+      schedules = await controller.get_schedule_records(tags, type_filter)
 
     return sorted(schedules, key=lambda x: x.scheduled_time)
 

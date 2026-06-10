@@ -1,4 +1,4 @@
-# Copyright 2025 Sébastien Demanou. All Rights Reserved.
+# Copyright 2025-2026 Sébastien Demanou. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -142,11 +142,15 @@ class Controller:
 
       return schedule
 
-  async def get_due_schedules(self, now: datetime) -> list[Schedule]:
+  async def get_due_schedules(self, now: datetime, type_filter: ScheduleType | None = None) -> list[Schedule]:
     async with self._session_factory() as session:
-      result = await session.execute(
-        select(Schedule).where((Schedule.scheduled_time <= now) & Schedule.scheduled_time.isnot(None))
-      )
+      query = select(Schedule).where((Schedule.scheduled_time <= now) & Schedule.scheduled_time.isnot(None))
+
+      if type_filter:
+        query = query.where(Schedule.type == type_filter)
+
+      result = await session.execute(query)
+
       return result.scalars().all()  # type: ignore
 
   async def delete_schedule(self, schedule_id: str) -> None:
