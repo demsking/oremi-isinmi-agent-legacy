@@ -14,6 +14,7 @@
 # ==============================================================================
 from datetime import datetime
 from datetime import timedelta
+from uuid import UUID
 
 from fastapi import Body
 from fastapi import FastAPI
@@ -60,7 +61,7 @@ def create_agent_endpoints(tag: str, api: FastAPI, controller: Controller) -> No
     return GenericResponse(ok=True)
 
   @api.post(
-    '/schedules/natural',
+    '/agent/message',
     tags=[tag],
     status_code=201,
     response_model=Controller.Response,
@@ -161,7 +162,7 @@ def create_agent_endpoints(tag: str, api: FastAPI, controller: Controller) -> No
       record = await controller.create_schedule(model)
       response = Controller.Response(
         ok=True,
-        id=record.id,
+        id=UUID(record.id),
         type=record.type,
         input=request.text,
         message=message,
